@@ -214,15 +214,16 @@ end)
 local function GetTargetForCombat(range)
     local nearest = nil
     local dist = range
-    local mouse = LP:GetMouse()
     
     -- Prioridade: Mobs
-    for _, v in pairs(workspace.Enemies:GetChildren()) do
-        if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-            local d = (v.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
-            if d < dist then
-                nearest = v
-                dist = d
+    if workspace:FindFirstChild("Enemies") then
+        for _, v in pairs(workspace.Enemies:GetChildren()) do
+            if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                local d = (v.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then
+                    nearest = v
+                    dist = d
+                end
             end
         end
     end
