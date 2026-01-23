@@ -112,9 +112,63 @@ _G.Settings = {
     Fruits = {["Auto Scan"] = false}
 }
 
+-- Configuração de Altura de Voo (Adicionado)
+_G.Settings.Setting.FlyHeight = 20
+
 LP.CharacterAdded:Connect(function(character)
     character:WaitForChild("Humanoid")
     wait(1) 
+end)
+
+-- Sistema de NoClip e Física (Do Omgshit - Melhora o Teleporte)
+local BaseParts = {}
+local RunService = game:GetService("RunService")
+
+task.spawn(function()
+    local function setupChar(char)
+        table.clear(BaseParts)
+        task.wait(1)
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                table.insert(BaseParts, v)
+            end
+        end
+    end
+
+    if LP.Character then setupChar(LP.Character) end
+    LP.CharacterAdded:Connect(setupChar)
+end)
+
+RunService.Stepped:Connect(function()
+    -- Ativa apenas se estiver farmando ou voando
+    local isFarming = _G.Settings.Main["Auto Farm"] or _G.Settings.Main["Auto Farm Boss"] or _G.Settings.Main["Auto Farm All Bosses"] or CurrentTween
+    
+    if isFarming then
+        pcall(function()
+            local Char = LP.Character
+            if Char and Char:FindFirstChild("HumanoidRootPart") then
+                local HRP = Char.HumanoidRootPart
+                
+                -- Anti-afogamento / Altura mínima
+                if HRP.Position.Y < _G.Settings.Setting.FlyHeight then
+                    HRP.CFrame = CFrame.new(HRP.Position.X, _G.Settings.Setting.FlyHeight, HRP.Position.Z)
+                end
+                
+                -- Trava velocidade para o Tween ser suave ("Fake Teleport")
+                HRP.Velocity = Vector3.zero
+                if Char:FindFirstChild("Humanoid") then
+                    Char.Humanoid.PlatformStand = false
+                end
+            end
+        end)
+        
+        -- NoClip agressivo para não bater em nada
+        for _, part in pairs(BaseParts) do
+            if part and part.CanCollide then
+                part.CanCollide = false
+            end
+        end
+    end
 end)
 
 -- Auto Skills Function
@@ -141,7 +195,7 @@ spawn(function()
     end
 end)
 
--- Tween Function Original (Controlada por flags de Farm)
+-- Tween Function Otimizada (Baseada no Omgshit)
 local function topos(Pos)
     if not _G.Settings.Main["Auto Farm"] and not _G.Settings.Main["Chest Farm"] and not _G.Settings.Main["Auto Farm Boss"] and not _G.Settings.Main["Auto Farm All Bosses"] then
         if CurrentTween then
@@ -153,16 +207,24 @@ local function topos(Pos)
     
     local Character = LP.Character or LP.CharacterAdded:Wait()
     local RootPart = Character:WaitForChild("HumanoidRootPart")
+    
+    if not RootPart then return end
+    
     local Distance = (Pos.Position - RootPart.Position).Magnitude
     
     if Distance > 10 then
+        -- Usa a velocidade configurada
         local Time = Distance / _G.Settings.Setting["Tween Speed"]
+        
+        -- Cria o Tween
         CurrentTween = game:GetService("TweenService"):Create(RootPart, TweenInfo.new(Time, Enum.EasingStyle.Linear), {CFrame = Pos})
         CurrentTween:Play()
         
         local start = tick()
+        -- Loop de espera melhorado
         repeat 
             task.wait()
+            -- Verifica cancelamento
             if not _G.Settings.Main["Auto Farm"] and not _G.Settings.Main["Chest Farm"] and not _G.Settings.Main["Auto Farm Boss"] and not _G.Settings.Main["Auto Farm All Bosses"] then
                 CurrentTween:Cancel()
                 CurrentTween = nil
@@ -201,6 +263,49 @@ local function BypassTween(Pos)
         RootPart.CFrame = Pos
     end
 end
+
+-- Kill Aura Corrigido e Acelerado
+spawn(function()
+    while task.wait() do -- Removeu o delay de 0.1 para ser instantâneo
+        if _G.Settings.Combat["Kill Aura"] then
+            pcall(function()
+                if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+                
+                local MyPos = LP.Character.HumanoidRootPart.Position
+                local Range = _G.Settings.Combat["Aura Range"] 
+                
+                -- Função de ataque interna rápida
+                local function Attack(Target)
+                    if Target and Target:FindFirstChild("HumanoidRootPart") and Target:FindFirstChild("Humanoid") and Target.Humanoid.Health > 0 then
+                        -- Envia pacotes de ataque
+                        RS.Modules.Net["RE/RegisterAttack"]:FireServer(0)
+                        RS.Modules.Net["RE/RegisterHit"]:FireServer(Target.HumanoidRootPart, {})
+                    end
+                end
+
+                local TargetMode = _G.Settings.Combat["Aura Target"]
+
+                if TargetMode == "Mobs Only" or TargetMode == "All" then
+                    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                        if v:FindFirstChild("HumanoidRootPart") and (v.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
+                            Attack(v)
+                        end
+                    end
+                end
+
+                if TargetMode == "Players Only" or TargetMode == "All" then
+                    for _, v in pairs(game.Players:GetChildren()) do
+                        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                             if (v.Character.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
+                                Attack(v.Character)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 
 -- Funções de Fruta Atualizadas (Com Toggle)
 local function ClearFruitButtons()
