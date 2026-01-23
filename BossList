@@ -1,0 +1,15 @@
+return {
+    [1] = { -- Sea 1
+        "The Gorilla King", "Bobby", "Yeti", "Vice Admiral", "Swan", 
+        "Magma Admiral", "Fishman Lord", "Wysper", "Thunder God", 
+        "Cyborg", "Saber Expert", "Warden", "Chief Warden", "Mob Leader"
+    },
+    [2] = { -- Sea 2
+        "Diamond", "Jeremy", "Fajita", "Don Swan", "Smoke Admiral", 
+        "Cursed Captain", "Darkbeard", "Order", "Awakened Ice Admiral", "Tide Keeper"
+    },
+    [3] = { -- Sea 3
+        "Stone", "Island Empress", "Kilo Admiral", "Captain Elephant", 
+        "Beautiful Pirate", "rip_indra True Form", "Longma", "Soul Reaper", "Cake Queen"
+    }
+}
