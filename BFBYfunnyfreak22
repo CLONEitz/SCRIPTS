@@ -7,7 +7,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 local VirtualUser = game:GetService("VirtualUser")
 
 local Window = Fluent:CreateWindow({
-    Title = "funnyfreak228's Hub | BETA 1.0.7",
+    Title = "funnyfreak228's Hub | BETA 1.0.8",
     SubTitle = "by @RealFreakxNil",
     TabWidth = 160,
     Size = UDim2.fromOffset(480, 380),
@@ -24,6 +24,9 @@ Fluent:Notify({
 
 local RS = game:GetService("ReplicatedStorage")
 local LP = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 _G.UIElements = {} 
 local errorCount = 0
@@ -32,9 +35,8 @@ local CurrentTween = nil
 local tableBoss = {}
 local FruitButtons = {}
 local FruitNotifications = {}
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- Database de Frutas (Do script Omgshit)
+-- Database de Frutas
 local FruitDB = {
     ["rbxassetid://15487764876"] = "Kitsune",
     ["rbxassetid://15123638064"] = "Leopard",
@@ -73,7 +75,7 @@ local FruitDB = {
     ["rbxassetid://11911905519"] = "Spirit"
 }
 
--- Database de Bosses do Omgshit (Corrigido)
+-- Database de Bosses
 local BossDB = {
     [1] = { -- Sea 1
         "The Gorilla King", "Bobby", "Yeti", "Vice Admiral", "Swan", 
@@ -90,7 +92,7 @@ local BossDB = {
     }
 }
 
--- Função para detectar Sea (Do Omgshit)
+-- Função para detectar Sea
 local function detectSea(placeId)
     if placeId == 2753915549 or placeId == 85211729168715 then
         return 1
@@ -107,22 +109,59 @@ local CurrentSea = detectSea(game.PlaceId)
 _G.Settings = {
     Main = {["Auto Farm"] = false, ["Auto Farm Boss"] = false, ["Auto Farm All Bosses"] = false, ["Select Boss"] = "None", ["Select Weapon"] = "Melee", ["Chest Farm"] = false, ["Chest Farm Mode"] = "Tween"},
     Combat = {["Kill Aura"] = false, ["Aura Range"] = 25, ["Aura Target"] = "All", ["Auto Skills"] = false},
-    Setting = {["Tween Speed"] = 300, ["Farm Distance"] = 35, ["Auto Haki"] = true, ["Bring Mob"] = true},
+    Setting = {["Tween Speed"] = 300, ["Farm Distance"] = 35, ["Auto Haki"] = true, ["Bring Mob"] = true, ["FlyHeight"] = 20},
     Stats = {["Enabled"] = false, ["Select Stat"] = "Melee"},
     Fruits = {["Auto Scan"] = false}
 }
-
--- Configuração de Altura de Voo (Adicionado)
-_G.Settings.Setting.FlyHeight = 20
 
 LP.CharacterAdded:Connect(function(character)
     character:WaitForChild("Humanoid")
     wait(1) 
 end)
 
+-- Função para Atualizar Lista de Bosses Vivos
+local function RefreshActiveBosses()
+    local ActiveBosses = {}
+    local Found = {}
+    
+    -- Verifica inimigos vivos no workspace
+    if workspace:FindFirstChild("Enemies") then
+        for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                -- Verifica se o inimigo está na nossa lista de Bosses do Sea atual
+                if BossDB[CurrentSea] and table.find(BossDB[CurrentSea], enemy.Name) then
+                    if not Found[enemy.Name] then
+                        table.insert(ActiveBosses, enemy.Name)
+                        Found[enemy.Name] = true
+                    end
+                end
+            end
+        end
+    end
+    
+    table.sort(ActiveBosses)
+    
+    if #ActiveBosses == 0 then
+        table.insert(ActiveBosses, "No Bosses Alive")
+    end
+    
+    if _G.UIElements.SelectBoss then
+        _G.UIElements.SelectBoss:SetValues(ActiveBosses)
+        -- Seleciona o primeiro da lista se o atual não estiver mais vivo
+        if _G.Settings.Main["Select Boss"] == "None" or not Found[_G.Settings.Main["Select Boss"]] then
+            if ActiveBosses[1] ~= "No Bosses Alive" then
+                _G.UIElements.SelectBoss:SetValue(ActiveBosses[1])
+            else
+                _G.UIElements.SelectBoss:SetValue("None")
+            end
+        end
+    end
+    
+    return #ActiveBosses
+end
+
 -- Sistema de NoClip e Física (Do Omgshit - Melhora o Teleporte)
 local BaseParts = {}
-local RunService = game:GetService("RunService")
 
 task.spawn(function()
     local function setupChar(char)
@@ -171,23 +210,59 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Auto Skills Function
+-- Helper para encontrar inimigo mais próximo (Usado no combate)
+local function GetTargetForCombat(range)
+    local nearest = nil
+    local dist = range
+    local mouse = LP:GetMouse()
+    
+    -- Prioridade: Mobs
+    for _, v in pairs(workspace.Enemies:GetChildren()) do
+        if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+            local d = (v.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then
+                nearest = v
+                dist = d
+            end
+        end
+    end
+    
+    return nearest
+end
+
+-- Auto Skills Function Corrigida (Mira + Clique)
 spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.5) do 
         if _G.Settings.Combat["Auto Skills"] then
             pcall(function()
                 if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
                 
-                -- Só usa skills se estiver com uma ferramenta equipada
-                local Tool = LP.Character:FindFirstChildWhichIsA("Tool")
-                if Tool and Tool:FindFirstChild("Handle") then
-                     -- Tenta usar Z, X, C, V, F
-                    local keys = {Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V, Enum.KeyCode.F}
-                    for _, key in ipairs(keys) do
-                        VirtualInputManager:SendKeyEvent(true, key, false, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendKeyEvent(false, key, false, game)
-                        task.wait(0.1)
+                local target = GetTargetForCombat(100) -- Alcance de 100 para skills
+                
+                if target then
+                    -- Mira no inimigo antes de usar a skill
+                    workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.HumanoidRootPart.Position)
+                    
+                    local Tool = LP.Character:FindFirstChildWhichIsA("Tool")
+                    if Tool and Tool:FindFirstChild("Handle") then
+                        local keys = {"Z", "X", "C", "V", "F"}
+                        for _, key in ipairs(keys) do
+                            if not _G.Settings.Combat["Auto Skills"] then break end
+                            
+                            -- Segura a tecla
+                            VirtualUser:CaptureController()
+                            VirtualUser:SetKeyDown(key)
+                            task.wait(0.1)
+                            
+                            -- Clica para ativar/lançar (Simula Mouse1)
+                            VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                            task.wait(0.1)
+                            VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                            
+                            -- Solta a tecla
+                            VirtualUser:SetKeyUp(key)
+                            task.wait(0.2) 
+                        end
                     end
                 end
             end)
@@ -240,66 +315,43 @@ local function topos(Pos)
     end
 end
 
--- Nova Função de Tween para Frutas e Boss Manual (Ignora checagem de farm)
-local function BypassTween(Pos)
-    local Character = LP.Character or LP.CharacterAdded:Wait()
-    local RootPart = Character:WaitForChild("HumanoidRootPart")
-    
-    if not RootPart then return end
-    
-    local Distance = (Pos.Position - RootPart.Position).Magnitude
-    if Distance > 10 then
-        local Time = Distance / _G.Settings.Setting["Tween Speed"]
-        local TI = TweenInfo.new(Time, Enum.EasingStyle.Linear)
-        local TP = {CFrame = Pos}
-        
-        -- Cancelar tween de farm se existir para evitar conflito
-        if CurrentTween then CurrentTween:Cancel() CurrentTween = nil end
-        
-        local Tween = game:GetService("TweenService"):Create(RootPart, TI, TP)
-        Tween:Play()
-        Tween.Completed:Wait()
-    else
-        RootPart.CFrame = Pos
-    end
-end
-
--- Kill Aura Corrigido e Acelerado
+-- Kill Aura Corrigido (Mira + Clique Spam)
 spawn(function()
-    while task.wait() do -- Removeu o delay de 0.1 para ser instantâneo
+    while task.wait() do -- Spam rápido
         if _G.Settings.Combat["Kill Aura"] then
             pcall(function()
                 if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
                 
-                local MyPos = LP.Character.HumanoidRootPart.Position
-                local Range = _G.Settings.Combat["Aura Range"] 
+                local target = GetTargetForCombat(_G.Settings.Combat["Aura Range"])
                 
-                -- Função de ataque interna rápida
-                local function Attack(Target)
-                    if Target and Target:FindFirstChild("HumanoidRootPart") and Target:FindFirstChild("Humanoid") and Target.Humanoid.Health > 0 then
-                        -- Envia pacotes de ataque
-                        RS.Modules.Net["RE/RegisterAttack"]:FireServer(0)
-                        RS.Modules.Net["RE/RegisterHit"]:FireServer(Target.HumanoidRootPart, {})
-                    end
-                end
-
-                local TargetMode = _G.Settings.Combat["Aura Target"]
-
-                if TargetMode == "Mobs Only" or TargetMode == "All" then
-                    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-                        if v:FindFirstChild("HumanoidRootPart") and (v.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
-                            Attack(v)
-                        end
-                    end
-                end
-
-                if TargetMode == "Players Only" or TargetMode == "All" then
-                    for _, v in pairs(game.Players:GetChildren()) do
-                        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                             if (v.Character.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
-                                Attack(v.Character)
+                if target then
+                    -- Mira no inimigo
+                    workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.HumanoidRootPart.Position)
+                    
+                    -- Garante que tem arma
+                    local SelectedWeapon = _G.Settings.Main["Select Weapon"] or "Melee"
+                    local Tool = LP.Character:FindFirstChildWhichIsA("Tool")
+                    
+                    if not Tool then
+                        for _, t in pairs(LP.Backpack:GetChildren()) do
+                            if t:IsA("Tool") and (t.ToolTip == SelectedWeapon or (SelectedWeapon == "Melee" and t.ToolTip == "Melee")) then
+                                LP.Character.Humanoid:EquipTool(t)
+                                Tool = t
+                                break
                             end
                         end
+                    end
+                    
+                    if Tool then
+                        -- Simula o clique de ataque normal (M1)
+                        VirtualUser:CaptureController()
+                        VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                        task.wait() -- Pequeno delay pro jogo registrar
+                        VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                        
+                        -- Mantém o ataque via Remote como backup garantido
+                        game:GetService("ReplicatedStorage").Modules.Net["RE/RegisterAttack"]:FireServer(0)
+                        game:GetService("ReplicatedStorage").Modules.Net["RE/RegisterHit"]:FireServer(target.HumanoidRootPart, {})
                     end
                 end
             end)
@@ -317,7 +369,7 @@ local function ClearFruitButtons()
 end
 
 local function CreateFruitButton(FruitName, FruitPosition)
-    if not _G.Settings.Fruits["Auto Scan"] then return end -- Checagem extra
+    if not _G.Settings.Fruits["Auto Scan"] then return end 
     
     if FruitButtons[FruitName] then
         FruitButtons[FruitName]:Destroy()
@@ -331,7 +383,6 @@ local function CreateFruitButton(FruitName, FruitPosition)
     
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 200, 0, 50)
-    -- Ajuste de posição para não ficar em cima do menu
     Button.Position = UDim2.new(1, -220, 0, 100 + (#FruitNotifications * 60)) 
     Button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     Button.BorderSizePixel = 0
@@ -355,7 +406,6 @@ local function CreateFruitButton(FruitName, FruitPosition)
         BypassTween(FruitPosition)
         ScreenGui:Destroy()
         FruitButtons[FruitName] = nil
-        -- Remover da lista de notificações visuais
         for i, v in ipairs(FruitNotifications) do
             if v == FruitName then
                 table.remove(FruitNotifications, i)
@@ -392,8 +442,6 @@ local function ScanForFruits()
             end
         end
     end
-    
-    -- Notificação opcional, removida para não spammar em loop
 end
 
 -- Auto Scan Listener Atualizado
@@ -403,8 +451,7 @@ local function ToggleFruitScan(state)
     _G.Settings.Fruits["Auto Scan"] = state
     
     if state then
-        -- Ativar
-        ScanForFruits() -- Scan inicial
+        ScanForFruits() 
         if not FruitConnection then
             FruitConnection = workspace.ChildAdded:Connect(function(child)
                 task.wait(1)
@@ -415,7 +462,6 @@ local function ToggleFruitScan(state)
         end
         Fluent:Notify({Title = "Fruit Scanner", Content = "Scanner ON. Waiting for fruits...", Duration = 3})
     else
-        -- Desativar
         ClearFruitButtons()
         if FruitConnection then
             FruitConnection:Disconnect()
@@ -523,12 +569,9 @@ local function DamageUnit(Target)
     end)
 end
 
-
-
 function CheckQuest()
     MyLevel = LP.Data.Level.Value
-    -- Usa o Sea detectado se possível, mas mantém lógica original de mapa por compatibilidade
-    if CurrentSea == 1 then
+    if game.PlaceId == 2753915549 then
         if MyLevel == 1 or MyLevel <= 9 then
             Mon = "Bandit"
             LevelQuest = 1
@@ -680,7 +723,7 @@ function CheckQuest()
             CFrameQuest = CFrame.new(5259, 37, 4050)
             CFrameMon = CFrame.new(5441, 42, 4950)
         end
-    elseif CurrentSea == 2 then
+    elseif game.PlaceId == 79091703265657 then
         if MyLevel == 700 or MyLevel <= 724 then
             Mon = "Raider"
             LevelQuest = 1
@@ -814,7 +857,7 @@ function CheckQuest()
             CFrameQuest = CFrame.new(-3054, 235, -10142)
             CFrameMon = CFrame.new(-3352, 285, -10534)
         end
-    elseif CurrentSea == 3 then
+    elseif game.PlaceId == 100117331123089 then
         if MyLevel == 1500 or MyLevel <= 1524 then
             Mon = "Pirate Millionaire"
             LevelQuest = 1
@@ -1042,58 +1085,11 @@ function CheckQuest()
 end
 
 function PopulateBossList()
-    tableBoss = {}
-    if BossDB[CurrentSea] then
-        tableBoss = BossDB[CurrentSea]
-        table.sort(tableBoss) -- Opcional: ordenar alfabeticamente
-    else
-        -- Fallback caso a detecção falhe (mantém lista antiga ou vazia)
-        tableBoss = {"Bosses not found for Sea " .. tostring(CurrentSea)}
-    end
+    -- Inicializa com lista vazia ou mensagem, o Refresh vai preencher
+    tableBoss = {"Click Refresh Below"}
 end
 
 PopulateBossList()
-
-spawn(function()
-    while task.wait(0.1) do
-        if _G.Settings.Combat["Kill Aura"] then
-            pcall(function()
-                if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then
-                    return
-                end
-                
-                local Character = LP.Character
-                local Selected = _G.Settings.Main["Select Weapon"]
-                local ToolInHand = Character:FindFirstChildWhichIsA("Tool")
-                
-
-                local MyPos = Character.HumanoidRootPart.Position
-                local Range = _G.Settings.Combat["Aura Range"] 
-                local TargetMode = _G.Settings.Combat["Aura Target"]
-
-                if TargetMode == "Mobs Only" or TargetMode == "All" then
-                    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-                        if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                            if (v.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
-                                DamageUnit(v)
-                            end
-                        end
-                    end
-                end
-
-                if TargetMode == "Players Only" or TargetMode == "All" then
-                    for _, v in pairs(game.Players:GetChildren()) do
-                        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                            if (v.Character.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
-                                DamageUnit(v.Character)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
 
 spawn(function()
     while task.wait(0.5) do
@@ -1134,7 +1130,8 @@ spawn(function()
         end
     end
 end)
---- auto farm loop wow!
+
+--- auto farm loop
 spawn(function()
     local TweenService = game:GetService("TweenService")
     local RunService = game:GetService("RunService") 
@@ -1144,18 +1141,6 @@ spawn(function()
     local safeplace = 12
     local stay = 20  
     local near = 240 
-
-    RunService.Stepped:Connect(function()
-        if _G.Settings.Main["Auto Farm"] and LP.Character then
-            local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
-            local hum = LP.Character:FindFirstChild("Humanoid")
-            if hrp then
-            LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-            LP.Character.Humanoid.PlatformStand = false
-            end
-           
-        end
-    end)
 
     local function GetNearestMobs(origin, maxCount, targetName, radius)
         local mobs = {}
@@ -1217,9 +1202,6 @@ spawn(function()
 
     while task.wait() do
         if not _G.Settings.Main["Auto Farm"] then 
-            if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-                LP.Character.Humanoid.PlatformStand = false
-            end
             lockedPosition = nil
             continue 
         end
@@ -1272,7 +1254,7 @@ spawn(function()
                             if #potentialGroup > 0 then
                                 for _, mob in ipairs(potentialGroup) do
                                     if mob and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                                        local loadCF = mob.HumanoidRootPart.CFrame * CFrame.new(0, HOVER_HEIGHT, 0)
+                                        local loadCF = mob.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)
                                         if (LP.Character.HumanoidRootPart.Position - loadCF.Position).Magnitude > 10 then
                                             topos(loadCF)
                                             task.wait(0.2)
@@ -1300,8 +1282,6 @@ spawn(function()
                             task.wait()
                             if not _G.Settings.Main["Auto Farm"] then break end
                             if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then break end
-                            LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                            LP.Character.Humanoid.PlatformStand = false
                             
                             local primaryTarget = nil
                             for _, mob in ipairs(_G.CurrentMobGroup) do
@@ -1364,20 +1344,9 @@ spawn(function()
         end)
     end
 end)
+
+-- Auto Farm Boss (Original + Fix)
 spawn(function()
-
-RunService.Stepped:Connect(function()
-        if _G.Settings.Main["Auto Farm Boss"] and LP.Character then
-            local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
-            local hum = LP.Character:FindFirstChild("Humanoid")
-            if hrp then
-            LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-            LP.Character.Humanoid.PlatformStand = false
-            end
-           
-        end
-end)
-
     while task.wait(0.2) do
         if _G.Settings.Main["Auto Farm Boss"] then
             pcall(function()
@@ -1393,9 +1362,7 @@ end)
                             if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
                                 repeat
                                     task.wait()
-                                    
                                     if not _G.Settings.Main["Auto Farm Boss"] then break end
-                                    
                                     v.HumanoidRootPart.CanCollide = false
                                     v.Humanoid.WalkSpeed = 0
                                     v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
@@ -1403,16 +1370,9 @@ end)
                                     local targetCF = v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0)
                                     topos(targetCF)
                                     
-                                    LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                                    LP.Character.Humanoid.PlatformStand = true
-                                    
                                     DamageUnit(v)
                                     
                                 until not _G.Settings.Main["Auto Farm Boss"] or not v.Parent or v.Humanoid.Health <= 0 or not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart")
-                                
-                                if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-                                    LP.Character.Humanoid.PlatformStand = false
-                                end
                             end
                         end
                     end
@@ -1427,18 +1387,8 @@ end)
     end
 end)
 
+-- Auto Farm All Bosses
 spawn(function()
-RunService.Stepped:Connect(function()
-        if _G.Settings.Main["Auto Farm All Bosses"] and LP.Character then
-            local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
-            local hum = LP.Character:FindFirstChild("Humanoid")
-            if hrp then
-            LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-            LP.Character.Humanoid.PlatformStand = false
-            end
-           
-        end
-end)
     while task.wait(0.2) do
         if _G.Settings.Main["Auto Farm All Bosses"] then
             pcall(function()
@@ -1453,7 +1403,6 @@ end)
                                 if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
                                     repeat
                                         task.wait()
-                                        
                                         if not _G.Settings.Main["Auto Farm All Bosses"] then break end
                                         
                                         v.HumanoidRootPart.CanCollide = false
@@ -1462,17 +1411,9 @@ end)
                                         
                                         local targetCF = v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0)
                                         topos(targetCF)
-                                        
-                                        LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                                        LP.Character.Humanoid.PlatformStand = true
-                                        
                                         DamageUnit(v)
                                         
                                     until not _G.Settings.Main["Auto Farm All Bosses"] or not v.Parent or v.Humanoid.Health <= 0 or not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart")
-                                    
-                                    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-                                        LP.Character.Humanoid.PlatformStand = false
-                                    end
                                 end
                             end
                         end
@@ -1536,9 +1477,6 @@ end)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
--- Removido TweenService duplicado, já declarado globalmente ou uso game:GetService direto
--- local VirtualInputManager = game:GetService("VirtualInputManager") -- Já movido para o topo
-
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
@@ -1686,7 +1624,7 @@ Tabs.Main:AddDropdown("SelectWeapon", {
     end
 })
 
--- ABA Fruits Nova Atualizada
+-- ABA Fruits Nova
 Tabs.Fruits:AddSection("Fruit Scanner")
 
 Tabs.Fruits:AddToggle("AutoScanFruits", {
@@ -1834,13 +1772,21 @@ _G.UIElements.SelectBoss = Tabs.Main:AddDropdown("SelectBoss", {
     Title = "Select Boss",
     Values = tableBoss,
     Multi = false,
-    Default = #tableBoss > 0 and tableBoss[1] or "None",
+    Default = "Click Refresh Below",
     Callback = function(Value)
         _G.Settings.Main["Select Boss"] = Value
     end
 })
 
--- Botão de Teleporte Manual para Boss
+Tabs.Main:AddButton({
+    Title = "Refresh Boss List (Alive Only)",
+    Description = "Scans server for currently alive bosses",
+    Callback = function()
+        local count = RefreshActiveBosses()
+        Fluent:Notify({Title = "Boss List Updated", Content = "Found " .. count .. " alive bosses.", Duration = 3})
+    end
+})
+
 Tabs.Main:AddButton({
     Title = "Teleport to Selected Boss",
     Description = "Fly to boss without auto-farming",
@@ -2073,7 +2019,7 @@ end)
 
 Tabs.Info:AddParagraph({
     Title = "Script Information",
-    Content = "Dev: @RealFreakxNil\nVersion: BETA 1.0.7\nLibrary: Fluent (Stable UI)\n\nChangelog:\n+ Added Fruit Scanner & Teleporter\n+ Added Manual Boss Teleport\n+ Tween cancellation on toggle off\n+ Death detection (auto-restart)\n+ Complete Third Sea levels (2575+)\n+ Fixed Outdated Quests\n+ Added BringMob\n+ Added Shop\n+ Anti Cheat Bypass"
+    Content = "Dev: @RealFreakxNil\nVersion: BETA 1.0.8\nLibrary: Fluent (Stable UI)\n\nChangelog:\n+ Added Fruit Scanner & Teleporter\n+ Added Manual Boss Teleport\n+ Tween cancellation on toggle off\n+ Death detection (auto-restart)\n+ Complete Third Sea levels (2575+)\n+ Fixed Outdated Quests\n+ Added BringMob\n+ Added Shop\n+ Anti Cheat Bypass"
 })
 
 local function updateStatusDisplay()
