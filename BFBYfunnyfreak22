@@ -32,6 +32,7 @@ local CurrentTween = nil
 local tableBoss = {}
 local FruitButtons = {}
 local FruitNotifications = {}
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Database de Frutas (Do script Omgshit)
 local FruitDB = {
@@ -72,16 +73,72 @@ local FruitDB = {
     ["rbxassetid://11911905519"] = "Spirit"
 }
 
+-- Database de Bosses do Omgshit (Corrigido)
+local BossDB = {
+    [1] = { -- Sea 1
+        "The Gorilla King", "Bobby", "Yeti", "Vice Admiral", "Swan", 
+        "Magma Admiral", "Fishman Lord", "Wysper", "Thunder God", 
+        "Cyborg", "Saber Expert", "Warden", "Chief Warden", "Mob Leader"
+    },
+    [2] = { -- Sea 2
+        "Diamond", "Jeremy", "Fajita", "Don Swan", "Smoke Admiral", 
+        "Cursed Captain", "Darkbeard", "Order", "Awakened Ice Admiral", "Tide Keeper"
+    },
+    [3] = { -- Sea 3
+        "Stone", "Island Empress", "Kilo Admiral", "Captain Elephant", 
+        "Beautiful Pirate", "rip_indra True Form", "Longma", "Soul Reaper", "Cake Queen"
+    }
+}
+
+-- Função para detectar Sea (Do Omgshit)
+local function detectSea(placeId)
+    if placeId == 2753915549 or placeId == 85211729168715 then
+        return 1
+    elseif placeId == 4442272183 or placeId == 79091703265657 then
+        return 2
+    elseif placeId == 7449423635 or placeId == 100117331123089 then
+        return 3
+    end
+    return 1 -- Default Sea 1
+end
+
+local CurrentSea = detectSea(game.PlaceId)
+
 _G.Settings = {
     Main = {["Auto Farm"] = false, ["Auto Farm Boss"] = false, ["Auto Farm All Bosses"] = false, ["Select Boss"] = "None", ["Select Weapon"] = "Melee", ["Chest Farm"] = false, ["Chest Farm Mode"] = "Tween"},
-    Combat = {["Kill Aura"] = false, ["Aura Range"] = 25, ["Aura Target"] = "All"},
+    Combat = {["Kill Aura"] = false, ["Aura Range"] = 25, ["Aura Target"] = "All", ["Auto Skills"] = false},
     Setting = {["Tween Speed"] = 300, ["Farm Distance"] = 35, ["Auto Haki"] = true, ["Bring Mob"] = true},
-    Stats = {["Enabled"] = false, ["Select Stat"] = "Melee"}
+    Stats = {["Enabled"] = false, ["Select Stat"] = "Melee"},
+    Fruits = {["Auto Scan"] = false}
 }
 
 LP.CharacterAdded:Connect(function(character)
     character:WaitForChild("Humanoid")
     wait(1) 
+end)
+
+-- Auto Skills Function
+spawn(function()
+    while task.wait(0.5) do
+        if _G.Settings.Combat["Auto Skills"] then
+            pcall(function()
+                if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+                
+                -- Só usa skills se estiver com uma ferramenta equipada
+                local Tool = LP.Character:FindFirstChildWhichIsA("Tool")
+                if Tool and Tool:FindFirstChild("Handle") then
+                     -- Tenta usar Z, X, C, V, F
+                    local keys = {Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V, Enum.KeyCode.F}
+                    for _, key in ipairs(keys) do
+                        VirtualInputManager:SendKeyEvent(true, key, false, game)
+                        task.wait(0.1)
+                        VirtualInputManager:SendKeyEvent(false, key, false, game)
+                        task.wait(0.1)
+                    end
+                end
+            end)
+        end
+    end
 end)
 
 -- Tween Function Original (Controlada por flags de Farm)
@@ -145,8 +202,18 @@ local function BypassTween(Pos)
     end
 end
 
--- Funções de Fruta (Baseado no Omgshit)
+-- Funções de Fruta Atualizadas (Com Toggle)
+local function ClearFruitButtons()
+    for name, gui in pairs(FruitButtons) do
+        if gui then gui:Destroy() end
+    end
+    FruitButtons = {}
+    FruitNotifications = {}
+end
+
 local function CreateFruitButton(FruitName, FruitPosition)
+    if not _G.Settings.Fruits["Auto Scan"] then return end -- Checagem extra
+    
     if FruitButtons[FruitName] then
         FruitButtons[FruitName]:Destroy()
         FruitButtons[FruitName] = nil
@@ -197,6 +264,8 @@ local function CreateFruitButton(FruitName, FruitPosition)
 end
 
 local function ScanForFruits()
+    if not _G.Settings.Fruits["Auto Scan"] then return end
+
     local found = 0
     for _, Obj in pairs(workspace:GetChildren()) do
         if Obj:IsA("Tool") and Obj:FindFirstChild("Handle") then
@@ -219,20 +288,37 @@ local function ScanForFruits()
         end
     end
     
-    if found > 0 then
-        Fluent:Notify({Title = "Fruits Found", Content = found .. " fruits detected! Check right side of screen.", Duration = 5})
-    else
-        Fluent:Notify({Title = "Scan Complete", Content = "No fruits found in workspace.", Duration = 3})
-    end
+    -- Notificação opcional, removida para não spammar em loop
 end
 
--- Auto Scan Listener
-workspace.ChildAdded:Connect(function(child)
-    task.wait(1) -- Esperar carregar
-    if child:IsA("Tool") and child:FindFirstChild("Handle") then
-        ScanForFruits()
+-- Auto Scan Listener Atualizado
+local FruitConnection = nil
+
+local function ToggleFruitScan(state)
+    _G.Settings.Fruits["Auto Scan"] = state
+    
+    if state then
+        -- Ativar
+        ScanForFruits() -- Scan inicial
+        if not FruitConnection then
+            FruitConnection = workspace.ChildAdded:Connect(function(child)
+                task.wait(1)
+                if _G.Settings.Fruits["Auto Scan"] and child:IsA("Tool") and child:FindFirstChild("Handle") then
+                    ScanForFruits()
+                end
+            end)
+        end
+        Fluent:Notify({Title = "Fruit Scanner", Content = "Scanner ON. Waiting for fruits...", Duration = 3})
+    else
+        -- Desativar
+        ClearFruitButtons()
+        if FruitConnection then
+            FruitConnection:Disconnect()
+            FruitConnection = nil
+        end
+        Fluent:Notify({Title = "Fruit Scanner", Content = "Scanner OFF.", Duration = 3})
     end
-end)
+end
 
 local ChestBlacklist = {}
 local BlacklistDuration = 5
@@ -336,7 +422,8 @@ end
 
 function CheckQuest()
     MyLevel = LP.Data.Level.Value
-    if game.PlaceId == 2753915549 then
+    -- Usa o Sea detectado se possível, mas mantém lógica original de mapa por compatibilidade
+    if CurrentSea == 1 then
         if MyLevel == 1 or MyLevel <= 9 then
             Mon = "Bandit"
             LevelQuest = 1
@@ -488,7 +575,7 @@ function CheckQuest()
             CFrameQuest = CFrame.new(5259, 37, 4050)
             CFrameMon = CFrame.new(5441, 42, 4950)
         end
-    elseif game.PlaceId == 79091703265657 then
+    elseif CurrentSea == 2 then
         if MyLevel == 700 or MyLevel <= 724 then
             Mon = "Raider"
             LevelQuest = 1
@@ -622,7 +709,7 @@ function CheckQuest()
             CFrameQuest = CFrame.new(-3054, 235, -10142)
             CFrameMon = CFrame.new(-3352, 285, -10534)
         end
-    elseif game.PlaceId == 100117331123089 then
+    elseif CurrentSea == 3 then
         if MyLevel == 1500 or MyLevel <= 1524 then
             Mon = "Pirate Millionaire"
             LevelQuest = 1
@@ -851,48 +938,12 @@ end
 
 function PopulateBossList()
     tableBoss = {}
-    if game.PlaceId == 2753915549 then 
-        tableBoss = {
-            "The Gorilla King",
-            "Bobby",
-            "Yeti",
-            "Mob Leader",
-            "Vice Admiral",
-            "Warden",
-            "Chief Warden",
-            "Swan",
-            "Magma Admiral",
-            "Fishman Lord",
-            "Wysper",
-            "Thunder God",
-            "Cyborg",
-            "Saber Expert"
-        }
-    elseif game.PlaceId == 79091703265657 then 
-        tableBoss = {
-            "Diamond",
-            "Jeremy",
-            "Fajita",
-            "Don Swan",
-            "Smoke Admiral",
-            "Cursed Captain",
-            "Darkbeard",
-            "Order",
-            "Awakened Ice Admiral",
-            "Tide Keeper"
-        }
-    elseif game.PlaceId == 100117331123089 then 
-        tableBoss = {
-            "Stone",
-            "Island Empress",
-            "Kilo Admiral",
-            "Captain Elephant",
-            "Beautiful Pirate",
-            "rip_indra True Form",
-            "Longma",
-            "Soul Reaper",
-            "Cake Queen"
-        }
+    if BossDB[CurrentSea] then
+        tableBoss = BossDB[CurrentSea]
+        table.sort(tableBoss) -- Opcional: ordenar alfabeticamente
+    else
+        -- Fallback caso a detecção falhe (mantém lista antiga ou vazia)
+        tableBoss = {"Bosses not found for Sea " .. tostring(CurrentSea)}
     end
 end
 
@@ -1380,8 +1431,8 @@ end)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+-- Removido TweenService duplicado, já declarado globalmente ou uso game:GetService direto
+-- local VirtualInputManager = game:GetService("VirtualInputManager") -- Já movido para o topo
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -1530,21 +1581,17 @@ Tabs.Main:AddDropdown("SelectWeapon", {
     end
 })
 
--- ABA Fruits Nova
+-- ABA Fruits Nova Atualizada
 Tabs.Fruits:AddSection("Fruit Scanner")
-Tabs.Fruits:AddParagraph({
-    Title = "Scanner Info",
-    Content = "Scanning runs automatically on fruit spawn. \nManual scan is available below."
-})
 
-Tabs.Fruits:AddButton({
-    Title = "Scan Fruits Now",
-    Description = "Finds all fruits currently in the server",
-    Callback = function()
-        ScanForFruits()
+Tabs.Fruits:AddToggle("AutoScanFruits", {
+    Title = "Auto Scan Fruits",
+    Description = "Automatically detect and show buttons for fruits",
+    Default = false,
+    Callback = function(Value)
+        ToggleFruitScan(Value)
     end
 })
-
 
 Tabs.Shop:AddSection("Sword Section")
 
@@ -1754,6 +1801,15 @@ Tabs.Combat:AddToggle("KillAura", {
     Default = true,
     Callback = function(Value)
         _G.Settings.Combat["Kill Aura"] = Value
+    end
+})
+
+Tabs.Combat:AddToggle("AutoSkills", {
+    Title = "Auto Skills",
+    Description = "Spam Z,X,C,V,F",
+    Default = false,
+    Callback = function(Value)
+        _G.Settings.Combat["Auto Skills"] = Value
     end
 })
 
