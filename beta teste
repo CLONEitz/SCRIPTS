@@ -208,7 +208,7 @@ local function DamageUnit(Target)
     end)
 end
 
--- Função para usar Skills
+-- Função para usar Skills (Adicione isto abaixo de DamageUnit)
 local function AutoSkills(Target)
     if not _G.Settings.Combat["Auto Skills"] then return end
     if not Target or not Target:FindFirstChild("HumanoidRootPart") then return end
@@ -1487,16 +1487,18 @@ CombatTab:AddSlider({
     end
 })
 
+-- Adicionando os elementos que faltaram na Aba Combat
 CombatTab:AddSlider({
     Name = "Aura Speed (Cooldown)",
     Min = 0,
-    Max = 100, -- Representando 0.0s a 1.0s
+    Max = 100, -- 0 a 1s
     Default = 10, -- 0.1s
     Callback = function(Value)
         _G.Settings.Combat["Aura Delay"] = Value / 100
     end
 })
-CombatTab:AddParagraph({Title = "Aviso de Risco", Text = "Quanto MENOR o cooldown, MAIOR o risco de detecção."})
+
+CombatTab:AddParagraph({Title = "Aviso", Text = "Menor cooldown = Maior risco de detecção."})
 
 CombatTab:AddSection("Auto Skills")
 
@@ -1713,10 +1715,11 @@ end
 
 PopulateBossList()
 
--- Loop Kill Aura Atualizado com Delay e Skills
+-- Substitua o Loop antigo do Kill Aura por este novo (com Cooldown e Skills)
 spawn(function()
     while true do
         local Delay = _G.Settings.Combat["Aura Delay"] or 0.1
+        if Delay < 0.05 then Delay = 0.05 end -- Segurança mínima
         task.wait(Delay)
         
         if _G.Settings.Combat["Kill Aura"] then
@@ -1736,7 +1739,7 @@ spawn(function()
                             if (v.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
                                 DamageUnit(v)
                                 if not DidAttack then
-                                    AutoSkills(v) -- Usa skills no primeiro alvo válido
+                                    AutoSkills(v)
                                     DidAttack = true
                                 end
                             end
