@@ -901,14 +901,6 @@ local ParticleContainer = Create("Frame", Containers, {
 	ClipsDescendants = true
 })
 
-local ParticleConfig = {
-	MaxParticles = 30,
-	SpawnRate = 0.1,
-	ParticleSize = {Min = 6, Max = 10},
-	ParticleSpeed = {Min = 15, Max = 25},
-	ParticleLifetime = 6
-}
-
 local CarnivalConfig = {
 	MaxItems = 60,
 	SpawnRate = 0.1,
@@ -932,120 +924,8 @@ local CarnivalConfig = {
 	}
 }
 
-local ActiveParticles = {}
 local ActiveCarnivalItems = {}
-local LastSpawn = 0
 local LastCarnivalSpawn = 0
-
-local function CreateCyberpunkParticle()
-	if #ActiveParticles >= ParticleConfig.MaxParticles then return end
-	if not ParticleContainer or not ParticleContainer.Parent then return end
-	
-	local containerSize = ParticleContainer.AbsoluteSize
-	if containerSize.X <= 0 or containerSize.Y <= 0 then return end
-	
-	local startX = math.random(10, math.max(11, containerSize.X - 10))
-	local startY = containerSize.Y + 20
-	local size = math.random(ParticleConfig.ParticleSize.Min, ParticleConfig.ParticleSize.Max)
-	local speed = math.random(ParticleConfig.ParticleSpeed.Min, ParticleConfig.ParticleSpeed.Max)
-	local particleColor = Theme["Color Theme"]
-	
-	local Particle = Create("Frame", ParticleContainer, {
-		Size = UDim2.fromOffset(size, size),
-		Position = UDim2.fromOffset(startX, startY),
-		BackgroundColor3 = particleColor,
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0
-	})
-	
-	Create("UICorner", Particle, {
-		CornerRadius = UDim.new(0.5, 0)
-	})
-	
-	local Glow = Create("Frame", Particle, {
-		Size = UDim2.new(1, 6, 1, 6),
-		Position = UDim2.new(0.5, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = particleColor,
-		BackgroundTransparency = 1,
-		ZIndex = -1
-	})
-	
-	Create("UICorner", Glow, {
-		CornerRadius = UDim.new(0.5, 0)
-	})
-	
-	local ParticleData = {
-		Frame = Particle,
-		Glow = Glow,
-		StartTime = tick(),
-		Speed = speed,
-		Direction = Vector2.new(0, -speed),
-		OriginalColor = particleColor
-	}
-	
-	CreateTween({Particle, "BackgroundTransparency", 0.2, 0.8})
-	CreateTween({Glow, "BackgroundTransparency", 0.7, 0.8})
-	
-	table.insert(ActiveParticles, ParticleData)
-end
-
-local function UpdateCyberpunkParticles(deltaTime)
-	if not ParticleContainer or not ParticleContainer.Parent then
-		for i = #ActiveParticles, 1, -1 do
-			if ActiveParticles[i].Frame then
-				ActiveParticles[i].Frame:Destroy()
-			end
-			table.remove(ActiveParticles, i)
-		end
-		return
-	end
-	
-	local currentTime = tick()
-	
-	for i = #ActiveParticles, 1, -1 do
-		local particle = ActiveParticles[i]
-		
-		if particle.Frame and particle.Frame.Parent then
-			local elapsed = currentTime - particle.StartTime
-			local currentPos = particle.Frame.Position
-			local newY = currentPos.Y.Offset + (particle.Direction.Y * deltaTime)
-			
-			if elapsed >= ParticleConfig.ParticleLifetime or newY < -20 then
-				CreateTween({particle.Frame, "BackgroundTransparency", 1, 0.5})
-				CreateTween({particle.Glow, "BackgroundTransparency", 1, 0.5})
-				
-				task.delay(0.5, function()
-					if particle.Frame and particle.Frame.Parent then
-						particle.Frame:Destroy()
-					end
-				end)
-				
-				table.remove(ActiveParticles, i)
-			else
-				particle.Frame.Position = UDim2.fromOffset(currentPos.X.Offset, newY)
-				
-				local lifeRatio = elapsed / ParticleConfig.ParticleLifetime
-				if lifeRatio > 0.8 then
-					local fadeAlpha = 0.2 * (1 - ((lifeRatio - 0.8) / 0.2))
-					particle.Frame.BackgroundTransparency = math.max(1 - fadeAlpha, 0.95)
-				end
-			end
-		else
-			table.remove(ActiveParticles, i)
-		end
-	end
-end
-
-local function SpawnCyberpunkSystem()
-	if not MainFrame or not MainFrame.Visible then return end
-	
-	local currentTime = tick()
-	if currentTime - LastSpawn >= ParticleConfig.SpawnRate then
-		CreateCyberpunkParticle()
-		LastSpawn = currentTime
-	end
-end
 
 local function CreateCarnivalItem()
 	if #ActiveCarnivalItems >= CarnivalConfig.MaxItems then return end
@@ -1160,8 +1040,6 @@ local function SpawnCarnivalSystem()
 end
 
 local ParticleConnection = RunService.Heartbeat:Connect(function(deltaTime)
-	UpdateCyberpunkParticles(deltaTime)
-	SpawnCyberpunkSystem()
 	UpdateCarnivalItems(deltaTime)
 	SpawnCarnivalSystem()
 end)
@@ -1255,11 +1133,6 @@ end)
 			CreateTween({MainFrame, "Size", SaveSize, 0.25, true})
 			ControlSize1.Visible = true
 			ControlSize2.Visible = true
-			for _, particle in pairs(ActiveParticles) do
-				if particle.Frame and particle.Frame.Parent then
-					particle.Frame.Visible = true
-				end
-			end
 			for _, item in pairs(ActiveCarnivalItems) do
 				if item.Frame and item.Frame.Parent then
 					item.Frame.Visible = true
@@ -1271,11 +1144,6 @@ end)
 			SaveSize = MainFrame.Size
 			ControlSize1.Visible = false
 			ControlSize2.Visible = false
-			for _, particle in pairs(ActiveParticles) do
-				if particle.Frame and particle.Frame.Parent then
-					particle.Frame.Visible = false
-				end
-			end
 			for _, item in pairs(ActiveCarnivalItems) do
 				if item.Frame and item.Frame.Parent then
 					item.Frame.Visible = false
