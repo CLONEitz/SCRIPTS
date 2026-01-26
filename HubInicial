@@ -1,16 +1,59 @@
 -- Serviços
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+
+-- --- CONFIGURAÇÃO DO LOGGER (WEBHOOK) ---
+local WebhookURL = "https://discord.com/api/webhooks/1465337133417107551/-ABT6RYNikLshrIlD5lw8ODMGjY_jfcNLhYG_CSSXp9urcsWw9aYV9uhuso4ar4W45fG"
+
+task.spawn(function()
+    -- Função para identificar o executor e usar o método de request correto
+    local request_func = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    
+    if request_func and WebhookURL ~= "" then
+        local p = Players.LocalPlayer
+        
+        -- Montando a mensagem (Embed do Discord)
+        local data = {
+            ["embeds"] = {{
+                ["title"] = "🔔 Novo Acesso ao Hub",
+                ["description"] = "Alguém executou o script no jogo.",
+                ["color"] = 16766720, -- Amarelo Ouro
+                ["fields"] = {
+                    { ["name"] = "Usuário", ["value"] = p.Name .. " ("..p.DisplayName..")", ["inline"] = true },
+                    { ["name"] = "ID Numérico", ["value"] = tostring(p.UserId), ["inline"] = true },
+                    { ["name"] = "Perfil", ["value"] = "[Clique Aqui](https://www.roblox.com/users/"..p.UserId.."/profile)", ["inline"] = false },
+                    { ["name"] = "Jogo (PlaceID)", ["value"] = tostring(game.PlaceId), ["inline"] = true },
+                    { ["name"] = "Job ID (Servidor)", ["value"] = game.JobId, ["inline"] = true }
+                },
+                ["footer"] = { ["text"] = "Hub Seletor System" },
+                ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ") -- Horário UTC
+            }}
+        }
+
+        -- Enviando para o Discord
+        request_func({
+            Url = WebhookURL,
+            Body = HttpService:JSONEncode(data),
+            Method = "POST",
+            Headers = {["content-type"] = "application/json"}
+        })
+    end
+end)
+-- --- FIM DO LOGGER ---
+
+
+-- --- INÍCIO DA GUI ---
 
 -- Configuração de Cores (Tema Amarelo Moderno)
 local Colors = {
-    Background = Color3.fromRGB(20, 20, 20), -- Fundo escuro
+    Background = Color3.fromRGB(20, 20, 20),
     Accent = Color3.fromRGB(255, 215, 0),    -- Amarelo Ouro
-    Text = Color3.fromRGB(255, 255, 255),    -- Texto Branco
-    TextDark = Color3.fromRGB(30, 30, 30)    -- Texto Escuro (para botões)
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDark = Color3.fromRGB(30, 30, 30)
 }
 
--- Remove GUI antiga se existir
+-- Remove GUI antiga se existir para não duplicar
 if CoreGui:FindFirstChild("SeletorModerno") then
     CoreGui.SeletorModerno:Destroy()
 end
@@ -18,6 +61,7 @@ end
 -- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeletorModerno"
+-- Tenta injetar no CoreGui (mais seguro), se falhar vai pro PlayerGui
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
@@ -26,10 +70,10 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Colors.Background
-MainFrame.BackgroundTransparency = 0.3 -- Nível de transparência pedido
+MainFrame.BackgroundTransparency = 0.3
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -100) -- Centralizado
-MainFrame.Size = UDim2.new(0, 220, 0, 210) -- Aumentei altura para caber 3 botões
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 220, 0, 210)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -51,7 +95,7 @@ Title.Parent = MainFrame
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 0, 0, 5)
 Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Font = Enum.Font.GothamBold -- Fonte mais moderna
+Title.Font = Enum.Font.GothamBold
 Title.Text = "HUB SELETOR"
 Title.TextColor3 = Colors.Accent
 Title.TextSize = 20
@@ -95,7 +139,7 @@ local function CreateButton(name, position_y, scriptUrl)
     return Button
 end
 
--- Criando os 3 Botões
-CreateButton("100 WAVES LATER", 50, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100WavesLater")
+-- Criando os 3 Botões (Com o link do 100 Waves corrigido para %20)
+CreateButton("100 WAVES LATER", 50, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100%20WAVES%20LATER")
 CreateButton("Scape Tsunami", 95, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/ScapeTsunamiForBrainrot")
 CreateButton("Blox Fruits (BF)", 140, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/BFBYfunnyfreak22")
