@@ -50,9 +50,19 @@ _G.Settings = {
         ["Select Weapon"] = "Melee", 
         ["Chest Farm"] = false, 
         ["Chest Farm Mode"] = "Tween",
-        ["FruitSniper"] = false
+        ["FruitSniper"] = false -- Nova Config
     },
-    Combat = {["Kill Aura"] = false, ["Aura Range"] = 25, ["Aura Target"] = "All"},
+    Combat = {
+        ["Kill Aura"] = false, 
+        ["Aura Range"] = 25, 
+        ["Aura Target"] = "All",
+        ["Aura Delay"] = 0.1, -- Novo Cooldown
+        ["Auto Skills"] = false, -- Master Toggle
+        ["Skill Z"] = true,
+        ["Skill X"] = true,
+        ["Skill C"] = true,
+        ["Skill V"] = true
+    },
     Setting = {["Tween Speed"] = 300, ["Farm Distance"] = 35, ["Auto Haki"] = true, ["Bring Mob"] = true},
     Stats = {["Enabled"] = false, ["Select Stat"] = "Melee"}
 }
@@ -75,46 +85,29 @@ local function TweenTP(TargetCFrame)
         local Info = TweenInfo.new(Dist/Speed, Enum.EasingStyle.Linear)
         local Tween = TweenService:Create(HRP, Info, {CFrame = TargetCFrame})
         Tween:Play()
+        
+        -- Cancelamento se a flag for desativada (segurança básica)
+        local check = task.spawn(function()
+            while Tween.PlaybackState == Enum.PlaybackState.Playing do
+                if not _G.Settings.Main["Auto Farm"] and not _G.Settings.Main["Auto Farm Boss"] and not _G.Settings.Main["Auto Farm All Bosses"] and not _G.Settings.Main["Chest Farm"] and not _G.Settings.Main["FruitSniper"] then
+                    Tween:Cancel()
+                    break
+                end
+                task.wait(0.1)
+            end
+        end)
+        
         Tween.Completed:Wait()
-        task.wait(0.2)
+        task.cancel(check)
+        
         HRP.CFrame = TargetCFrame
     end
 end
 
+-- Substituir topos antigo por um wrapper para o TweenTP para manter compatibilidade
 local function topos(Pos)
-    if not _G.Settings.Main["Auto Farm"] and not _G.Settings.Main["Chest Farm"] and not _G.Settings.Main["Auto Farm Boss"] and not _G.Settings.Main["Auto Farm All Bosses"] then
-        if CurrentTween then
-            CurrentTween:Cancel()
-            CurrentTween = nil
-        end
-        return
-    end
-    
-    local Character = LP.Character or LP.CharacterAdded:Wait()
-    local RootPart = Character:WaitForChild("HumanoidRootPart")
-    local Distance = (Pos.Position - RootPart.Position).Magnitude
-    
-    if Distance > 10 then
-        local Time = Distance / _G.Settings.Setting["Tween Speed"]
-        CurrentTween = game:GetService("TweenService"):Create(RootPart, TweenInfo.new(Time, Enum.EasingStyle.Linear), {CFrame = Pos})
-        CurrentTween:Play()
-        
-        local start = tick()
-        repeat 
-            task.wait()
-            if not _G.Settings.Main["Auto Farm"] and not _G.Settings.Main["Chest Farm"] and not _G.Settings.Main["Auto Farm Boss"] and not _G.Settings.Main["Auto Farm All Bosses"] then
-                CurrentTween:Cancel()
-                CurrentTween = nil
-                return
-            end
-        until (Pos.Position - RootPart.Position).Magnitude < 12 
-        or (tick() - start) > (Time + 0.5)
-        or not RootPart.Parent 
-        
-        CurrentTween = nil
-    else
-        RootPart.CFrame = Pos
-    end
+    if typeof(Pos) == "Vector3" then Pos = CFrame.new(Pos) end
+    TweenTP(Pos)
 end
 
 local ChestBlacklist = {}
@@ -213,6 +206,28 @@ local function DamageUnit(Target)
         RS.Modules.Net["RE/RegisterAttack"]:FireServer(4)
         RS.Modules.Net["RE/RegisterHit"]:FireServer(Target.HumanoidRootPart, {})
     end)
+end
+
+-- Função para usar Skills
+local function AutoSkills(Target)
+    if not _G.Settings.Combat["Auto Skills"] then return end
+    if not Target or not Target:FindFirstChild("HumanoidRootPart") then return end
+    
+    -- Olha para o inimigo antes de usar skill
+    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        LP.Character.HumanoidRootPart.CFrame = CFrame.new(LP.Character.HumanoidRootPart.Position, Target.HumanoidRootPart.Position)
+    end
+
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    local Skills = {"Z", "X", "C", "V"}
+    
+    for _, Key in pairs(Skills) do
+        if _G.Settings.Combat["Skill " .. Key] then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[Key], false, game)
+            task.wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[Key], false, game)
+        end
+    end
 end
 
 -- Lógica Original das Quests (Hardcoded)
@@ -1472,6 +1487,30 @@ CombatTab:AddSlider({
     end
 })
 
+CombatTab:AddSlider({
+    Name = "Aura Speed (Cooldown)",
+    Min = 0,
+    Max = 100, -- Representando 0.0s a 1.0s
+    Default = 10, -- 0.1s
+    Callback = function(Value)
+        _G.Settings.Combat["Aura Delay"] = Value / 100
+    end
+})
+CombatTab:AddParagraph({Title = "Aviso de Risco", Text = "Quanto MENOR o cooldown, MAIOR o risco de detecção."})
+
+CombatTab:AddSection("Auto Skills")
+
+CombatTab:AddToggle({
+    Name = "Enable Auto Skills",
+    Default = false,
+    Callback = function(Value) _G.Settings.Combat["Auto Skills"] = Value end
+})
+
+CombatTab:AddToggle({ Name = "Use Z", Default = true, Callback = function(V) _G.Settings.Combat["Skill Z"] = V end })
+CombatTab:AddToggle({ Name = "Use X", Default = true, Callback = function(V) _G.Settings.Combat["Skill X"] = V end })
+CombatTab:AddToggle({ Name = "Use C", Default = true, Callback = function(V) _G.Settings.Combat["Skill C"] = V end })
+CombatTab:AddToggle({ Name = "Use V", Default = true, Callback = function(V) _G.Settings.Combat["Skill V"] = V end })
+
 -- Fruit Tab Logic (Integrada com o loop do Omgshit que busca ferramentas na workspace)
 FruitTab:AddSection("Fruit Sniper")
 
@@ -1672,8 +1711,56 @@ local function updateStatusDisplay()
     end)
 end
 
+PopulateBossList()
+
+-- Loop Kill Aura Atualizado com Delay e Skills
 spawn(function()
-    while task.wait(1) do
-        updateStatusDisplay()
+    while true do
+        local Delay = _G.Settings.Combat["Aura Delay"] or 0.1
+        task.wait(Delay)
+        
+        if _G.Settings.Combat["Kill Aura"] then
+            pcall(function()
+                if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then
+                    return
+                end
+                
+                local MyPos = LP.Character.HumanoidRootPart.Position
+                local Range = _G.Settings.Combat["Aura Range"] 
+                local TargetMode = _G.Settings.Combat["Aura Target"]
+                local DidAttack = false
+
+                if TargetMode == "Mobs Only" or TargetMode == "All" then
+                    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                        if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                            if (v.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
+                                DamageUnit(v)
+                                if not DidAttack then
+                                    AutoSkills(v) -- Usa skills no primeiro alvo válido
+                                    DidAttack = true
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if TargetMode == "Players Only" or TargetMode == "All" then
+                    for _, v in pairs(game.Players:GetChildren()) do
+                        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
+                            if (v.Character.HumanoidRootPart.Position - MyPos).Magnitude <= Range then
+                                DamageUnit(v.Character)
+                                if not DidAttack then
+                                    AutoSkills(v.Character)
+                                    DidAttack = true
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
     end
 end)
+
+spawn(function()
+    while task.wait(0.5) do
