@@ -52,31 +52,19 @@ local redzlib = {
 			["Color Hub 9"] = Color3.fromRGB(0, 0, 0, 0),
 			["Color Dark Greem"] = Color3.fromRGB(43, 255, 0)
 		},
-		Halloween = {
-    ["Color Hub 1"] = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(20, 10, 10)),
-        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(40, 15, 50)),
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(20, 10, 10))
-    }),
-    ["Color Hub 2"] = Color3.fromRGB(25, 15, 30),
-    ["Color Stroke"] = Color3.fromRGB(60, 20, 80),
-    ["Color Theme"] = Color3.fromRGB(255, 140, 0),
-    ["Color Text"] = Color3.fromRGB(250, 240, 200),
-    ["Color Dark Text"] = Color3.fromRGB(200, 120, 100)
-},
 		Carnival = {
 			["Color Hub 1"] = ColorSequence.new({
 				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 156, 59)), -- Verde Brasil
 				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 223, 0)), -- Amarelo Brasil
 				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 39, 118)) -- Azul Brasil
 			}),
-			["Color Hub 2"] = Color3.fromRGB(20, 25, 35), -- Fundo azulado escuro
-			["Color Stroke"] = Color3.fromRGB(0, 80, 40), -- Borda esverdeada
-			["Color Theme"] = Color3.fromRGB(255, 223, 0), -- Tema Amarelo Ouro
+			["Color Hub 2"] = Color3.fromRGB(20, 25, 35),
+			["Color Stroke"] = Color3.fromRGB(0, 80, 40),
+			["Color Theme"] = Color3.fromRGB(255, 223, 0),
 			["Color Text"] = Color3.fromRGB(245, 245, 245),
 			["Color Dark Text"] = Color3.fromRGB(200, 200, 200),
-			["Color Dark Purple"] = Color3.fromRGB(0, 50, 150), -- Azul
-			["Color Dark Greem"] = Color3.fromRGB(0, 200, 80) -- Verde
+			["Color Dark Purple"] = Color3.fromRGB(0, 50, 150),
+			["Color Dark Greem"] = Color3.fromRGB(0, 200, 80)
 		}
 	},
 	Info = {
@@ -929,17 +917,17 @@ local CarnivalConfig = {
 		Ribbon = {X = 4, Y = 15},
 		Mask = {Min = 25, Max = 40}
 	},
-	Speed = {Min = 50, Max = 100}, -- Velocidade de queda
+	Speed = {Min = 50, Max = 100}, -- Caindo
 	RotationSpeed = {Min = -100, Max = 100},
-	SwayAmplitude = 30, -- Força do balanço
-	SwayFrequency = 2, -- Velocidade do balanço
+	SwayAmplitude = 30,
+	SwayFrequency = 2,
 	MaskIDs = {
-		"rbxassetid://13361429402", -- Exemplo de máscara
+		"rbxassetid://13361429402", -- Mascara exemplo
 	},
 	Colors = {
-		Color3.fromRGB(0, 156, 59), -- Verde
-		Color3.fromRGB(255, 223, 0), -- Amarelo
-		Color3.fromRGB(0, 39, 118), -- Azul
+		Color3.fromRGB(0, 156, 59),   -- Verde
+		Color3.fromRGB(255, 223, 0),  -- Amarelo
+		Color3.fromRGB(0, 39, 118),   -- Azul
 		Color3.fromRGB(255, 255, 255) -- Branco
 	}
 }
@@ -1070,7 +1058,7 @@ local function CreateCarnivalItem()
 	local itemType = (roll <= 70 and "Confetti") or (roll <= 90 and "Ribbon") or "Mask"
 	
 	local startX = math.random(10, math.max(11, containerSize.X - 10))
-	local startY = -50 -- Começa acima da tela
+	local startY = -50 
 	local speed = math.random(CarnivalConfig.Speed.Min, CarnivalConfig.Speed.Max)
 	local rotationSpeed = math.random(CarnivalConfig.RotationSpeed.Min, CarnivalConfig.RotationSpeed.Max)
 	local color = CarnivalConfig.Colors[math.random(1, #CarnivalConfig.Colors)]
@@ -1096,7 +1084,7 @@ local function CreateCarnivalItem()
 			BorderSizePixel = 0,
 			ZIndex = -3
 		})
-	else -- Confetti
+	else 
 		local size = math.random(CarnivalConfig.Sizes.Confetti.Min, CarnivalConfig.Sizes.Confetti.Max)
 		ItemFrame = Create("Frame", ParticleContainer, {
 			Size = UDim2.fromOffset(size, size),
@@ -1141,12 +1129,9 @@ local function UpdateCarnivalItems(deltaTime)
 			local currentPos = item.Frame.Position
 			local elapsed = currentTime - item.StartTime
 			
-			-- Descendo (Y aumenta)
-			-- Calculamos a nova posição Y baseada no tempo e velocidade
 			local distY = item.Speed * elapsed
 			local newY = item.InitialY + distY
 			
-			-- Balançando (X oscila)
 			local swayX = math.sin((currentTime * CarnivalConfig.SwayFrequency) + item.SwayOffset) * CarnivalConfig.SwayAmplitude
 			local newX = item.InitialX + swayX
 			
