@@ -63,7 +63,21 @@ local redzlib = {
     ["Color Theme"] = Color3.fromRGB(255, 140, 0),
     ["Color Text"] = Color3.fromRGB(250, 240, 200),
     ["Color Dark Text"] = Color3.fromRGB(200, 120, 100)
-}
+},
+		Carnival = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 156, 59)), -- Verde Brasil
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 223, 0)), -- Amarelo Brasil
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 39, 118)) -- Azul Brasil
+			}),
+			["Color Hub 2"] = Color3.fromRGB(20, 25, 35), -- Fundo azulado escuro
+			["Color Stroke"] = Color3.fromRGB(0, 80, 40), -- Borda esverdeada
+			["Color Theme"] = Color3.fromRGB(255, 223, 0), -- Tema Amarelo Ouro
+			["Color Text"] = Color3.fromRGB(245, 245, 245),
+			["Color Dark Text"] = Color3.fromRGB(200, 200, 200),
+			["Color Dark Purple"] = Color3.fromRGB(0, 50, 150), -- Azul
+			["Color Dark Greem"] = Color3.fromRGB(0, 200, 80) -- Verde
+		}
 	},
 	Info = {
 		Version = "1.2.0"
@@ -71,7 +85,7 @@ local redzlib = {
 	Save = {
 		UISize = {550, 380},
 		TabSize = 160,
-		Theme = "Halloween"
+		Theme = "Carnival"
 	},
 	Settings = {},
 	Connection = {},
@@ -920,13 +934,13 @@ local CarnivalConfig = {
 	SwayAmplitude = 30, -- Força do balanço
 	SwayFrequency = 2, -- Velocidade do balanço
 	MaskIDs = {
-		"rbxassetid://13361429402", -- Exemplo de máscara (substitua se tiver melhores)
+		"rbxassetid://13361429402", -- Exemplo de máscara
 	},
 	Colors = {
-		Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0), 
-		Color3.fromRGB(0, 0, 255), Color3.fromRGB(255, 255, 0), 
-		Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255),
-		Color3.fromRGB(255, 165, 0)
+		Color3.fromRGB(0, 156, 59), -- Verde
+		Color3.fromRGB(255, 223, 0), -- Amarelo
+		Color3.fromRGB(0, 39, 118), -- Azul
+		Color3.fromRGB(255, 255, 255) -- Branco
 	}
 }
 
@@ -1099,7 +1113,8 @@ local function CreateCarnivalItem()
 		Speed = speed,
 		RotationSpeed = rotationSpeed,
 		InitialX = startX,
-		SwayOffset = math.random(0, 100)
+		SwayOffset = math.random(0, 100),
+		InitialY = startY
 	}
 	
 	table.insert(ActiveCarnivalItems, ItemData)
@@ -1124,9 +1139,12 @@ local function UpdateCarnivalItems(deltaTime)
 		
 		if item.Frame and item.Frame.Parent then
 			local currentPos = item.Frame.Position
+			local elapsed = currentTime - item.StartTime
 			
 			-- Descendo (Y aumenta)
-			local newY = currentPos.Y.Offset + (item.Speed * deltaTime)
+			-- Calculamos a nova posição Y baseada no tempo e velocidade
+			local distY = item.Speed * elapsed
+			local newY = item.InitialY + distY
 			
 			-- Balançando (X oscila)
 			local swayX = math.sin((currentTime * CarnivalConfig.SwayFrequency) + item.SwayOffset) * CarnivalConfig.SwayAmplitude
