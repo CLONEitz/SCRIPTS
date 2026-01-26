@@ -752,7 +752,6 @@ function redzlib:Notify(Configs)
 end
 
 function redzlib:MakeWindow(Configs)
-	-- Garante que Configs seja uma tabela, mesmo que passem string
 	if type(Configs) == "string" then Configs = {Name = Configs} end
 	Configs = Configs or {}
 	
@@ -1037,7 +1036,7 @@ function redzlib:MakeWindow(Configs)
 	end)
 	
 	-- [[ SISTEMA DE BOLINHA FLUTUANTE (BUBBLE) ]] --
-	local BubbleConfig = Configs.Bubble or {}
+	local SafeBubbleConfig = (type(Configs) == "table" and Configs.Bubble) or {}
 	
 	local Bubble = Create("ImageButton", ScreenGui, {
 		Name = "Bubble",
@@ -1052,13 +1051,13 @@ function redzlib:MakeWindow(Configs)
 	Make("Stroke", Bubble, Theme["Color Stroke"])
 	MakeDrag(Bubble)
 	
-	if BubbleConfig.Image then
+	if SafeBubbleConfig.Image then
 		Create("ImageLabel", Bubble, {
 			Size = UDim2.fromScale(0.65, 0.65),
 			Position = UDim2.fromScale(0.5, 0.5),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundTransparency = 1,
-			Image = BubbleConfig.Image,
+			Image = SafeBubbleConfig.Image,
 			ImageColor3 = Theme["Color Text"],
 			ZIndex = 1006
 		})
@@ -1071,7 +1070,7 @@ function redzlib:MakeWindow(Configs)
 		InsertTheme(Create("TextLabel", Bubble, {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
-			Text = BubbleConfig.Text or Letter,
+			Text = SafeBubbleConfig.Text or Letter,
 			Font = Enum.Font.FredokaOne,
 			TextColor3 = Theme["Color Text"],
 			TextSize = 22,
@@ -1282,21 +1281,21 @@ function redzlib:MakeWindow(Configs)
 	
 	local ContainerList = {}
 	function Window:MakeTab(arg1, arg2)
-		local Configs = {}
+		local TabConfig = {}
 		if type(arg1) == "table" then
-			Configs = arg1
+			TabConfig = arg1
 		elseif type(arg1) == "string" then
-			Configs = { Name = arg1 }
+			TabConfig = { Name = arg1 }
 			if type(arg2) == "string" then
-				Configs.Icon = arg2
+				TabConfig.Icon = arg2
 			elseif type(arg2) == "table" then
-				for k,v in pairs(arg2) do Configs[k] = v end
+				for k,v in pairs(arg2) do TabConfig[k] = v end
 			end
 		end
-		Configs = Configs or {}
+		TabConfig = TabConfig or {}
 
-		local TName = Configs[1] or Configs.Name or Configs.Title or "Tab"
-		local TIcon = Configs[2] or Configs.Icon or ""
+		local TName = TabConfig[1] or TabConfig.Name or TabConfig.Title or "Tab"
+		local TIcon = TabConfig[2] or TabConfig.Icon or ""
 		
 		TIcon = redzlib:GetIcon(TIcon)
 		if not TIcon:find("rbxassetid://") or TIcon:gsub("rbxassetid://", ""):len() < 6 then
@@ -2368,5 +2367,3 @@ function redzlib:MakeWindow(Configs)
 
 	return Window
 end
-
-return redzlib
