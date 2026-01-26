@@ -239,19 +239,21 @@ local function AutoSkillsAttack(Target)
     
     -- Loop para usar cada habilidade
     for _, Key in ipairs(Skills) do
-        -- Pressiona a tecla
+        -- 1. Pressiona a tecla para selecionar a habilidade
         VIM:SendKeyEvent(true, Key, false, game)
-        task.wait(0.05) -- Pequeno delay para registrar
+        task.wait(0.2) -- Delay para o jogo registrar a seleção da skill
         
-        -- Clica na tela (Simula o uso da skill na direção da mira)
+        -- 2. Clica na tela (Simula o uso da skill na direção da mira)
         VirtualUser:CaptureController()
         VirtualUser:Button1Down(Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2))
+        task.wait(0.1)
+        VirtualUser:Button1Up(Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)) -- Solta o clique para garantir o registro
         
-        task.wait(0.05)
-        
-        -- Solta a tecla
+        -- 3. Solta a tecla da habilidade
         VIM:SendKeyEvent(false, Key, false, game)
-        task.wait(0.05)
+        
+        -- 4. Cooldown de 2 segundos entre cada habilidade solicitado
+        task.wait(2)
     end
     
     -- Ativa Ken Haki (Observation)
