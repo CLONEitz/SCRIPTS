@@ -33,6 +33,7 @@ redzlib:Notify({
 local RS = game:GetService("ReplicatedStorage")
 local LP = game:GetService("Players").LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
+local VIM = game:GetService("VirtualInputManager") -- Adicionado VirtualInputManager
 local TweenService = game:GetService("TweenService")
 
 _G.UIElements = {} 
@@ -221,21 +222,39 @@ local function DamageUnit(Target)
     end)
 end
 
--- Função Attack Implementada (Omgshit Logic + Mira)
+-- Função Attack Implementada (Skills Z, X, C, V, F + Clique + Mira Condicional)
 local function AutoSkillsAttack(Target)
     if not Target or not Target:FindFirstChild("HumanoidRootPart") then return end
     
-    -- Mira no inimigo (Camera LookAt)
-    local Camera = workspace.CurrentCamera
-    if Camera then
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.HumanoidRootPart.Position)
+    -- Mira no inimigo APENAS se o Auto Farm estiver ativo (solicitado pelo usuário)
+    if _G.Settings.Main["Auto Farm"] or _G.Settings.Main["Auto Farm Boss"] or _G.Settings.Main["Auto Farm All Bosses"] then
+        local Camera = workspace.CurrentCamera
+        if Camera then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.HumanoidRootPart.Position)
+        end
     end
 
-    -- Lógica do VirtualUser enviada
-    VirtualUser:CaptureController()
-    VirtualUser:Button1Down(Vector2.new(1280, 672)) -- Coordenadas originais do snippet
+    -- Lista de Teclas das Habilidades
+    local Skills = {Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V, Enum.KeyCode.F}
     
-    -- Ativa Ken Haki (Observation) conforme snippet
+    -- Loop para usar cada habilidade
+    for _, Key in ipairs(Skills) do
+        -- Pressiona a tecla
+        VIM:SendKeyEvent(true, Key, false, game)
+        task.wait(0.05) -- Pequeno delay para registrar
+        
+        -- Clica na tela (Simula o uso da skill na direção da mira)
+        VirtualUser:CaptureController()
+        VirtualUser:Button1Down(Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2))
+        
+        task.wait(0.05)
+        
+        -- Solta a tecla
+        VIM:SendKeyEvent(false, Key, false, game)
+        task.wait(0.05)
+    end
+    
+    -- Ativa Ken Haki (Observation)
     RS.Remotes.CommE:FireServer("Ken", true)
 end
 
