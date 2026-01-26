@@ -752,6 +752,10 @@ function redzlib:Notify(Configs)
 end
 
 function redzlib:MakeWindow(Configs)
+	-- Garante que Configs seja uma tabela, mesmo que passem string
+	if type(Configs) == "string" then Configs = {Name = Configs} end
+	Configs = Configs or {}
+	
 	local WTitle = Configs[1] or Configs.Name or Configs.Title or "redz Library V5"
 	local WMiniText = Configs[2] or Configs.SubTitle or "by : redz9999"
 	
@@ -762,7 +766,6 @@ function redzlib:MakeWindow(Configs)
 		if type(File) ~= "string" then return end
 		if not readfile or not isfile then return end
 		local s, r = pcall(isfile, File)
-		
 		if s and r then
 			local s, _Flags = pcall(readfile, File)
 			if s and type(_Flags) == "string" then
@@ -862,7 +865,6 @@ function redzlib:MakeWindow(Configs)
 	})
 
 	-- [[ SISTEMA DE PARTICULAS (CARNAVAL) ]] --
-	-- Movido para cá para garantir que ParticleContainer e MainFrame existam
 	local CarnivalConfig = {
 		MaxItems = 60,
 		SpawnRate = 0.1,
@@ -1035,8 +1037,7 @@ function redzlib:MakeWindow(Configs)
 	end)
 	
 	-- [[ SISTEMA DE BOLINHA FLUTUANTE (BUBBLE) ]] --
-	local SafeConfigs = (type(Configs) == "table" and Configs) or {}
-	local BubbleConfig = SafeConfigs.Bubble or {}
+	local BubbleConfig = Configs.Bubble or {}
 	
 	local Bubble = Create("ImageButton", ScreenGui, {
 		Name = "Bubble",
