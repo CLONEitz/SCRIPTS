@@ -1085,6 +1085,61 @@ end)
 		SaveJson("redz library V5.json", redzlib.Save)
 	end)
 	
+	-- [[ SISTEMA DE BOLINHA FLUTUANTE (BUBBLE) ]] --
+	
+	-- Garante que Configs seja uma tabela para ler .Bubble
+	local SafeConfigs = (type(Configs) == "table" and Configs) or {}
+	local BubbleConfig = SafeConfigs.Bubble or {}
+	
+	local Bubble = Create("ImageButton", ScreenGui, {
+		Name = "Bubble",
+		Size = UDim2.fromOffset(50, 50),
+		Position = UDim2.new(0.1, 0, 0.1, 0),
+		BackgroundColor3 = Theme["Color Hub 2"],
+		AutoButtonColor = false,
+		Visible = false,
+		ZIndex = 1005 -- ZIndex alto para ficar na frente de tudo
+	})
+	Make("Corner", Bubble, UDim.new(1, 0)) -- Totalmente redondo
+	Make("Stroke", Bubble, Theme["Color Stroke"])
+	MakeDrag(Bubble)
+	
+	-- Define o conteúdo da bolinha (Imagem ou Texto)
+	if BubbleConfig.Image then
+		Create("ImageLabel", Bubble, {
+			Size = UDim2.fromScale(0.65, 0.65),
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			Image = BubbleConfig.Image,
+			ImageColor3 = Theme["Color Text"],
+			ZIndex = 1006
+		})
+	else
+		-- Pega a primeira letra do título ou usa "L" padrão
+		local Letter = "L"
+		if type(WTitle) == "string" and #WTitle > 0 then
+			Letter = string.sub(WTitle, 1, 1)
+		end
+		
+		InsertTheme(Create("TextLabel", Bubble, {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			Text = BubbleConfig.Text or Letter,
+			Font = Enum.Font.FredokaOne,
+			TextColor3 = Theme["Color Text"],
+			TextSize = 22,
+			ZIndex = 1006
+		}), "Text")
+	end
+	
+	-- Ao clicar na bolinha, a janela reaparece
+	Bubble.Activated:Connect(function()
+		Bubble.Visible = false
+		MainFrame.Visible = true
+		Minimized = false
+	end)
+	
 	local ButtonsFolder = Create("Folder", TopBar, {
 		Name = "Buttons"
 	})
@@ -1112,6 +1167,7 @@ end)
 	
 	local Minimized, SaveSize, WaitClick
 	local Window, FirstTab = {}, false
+	
 	function Window:CloseBtn()
 		local Dialog = Window:Dialog({
 			Title = "Close",
@@ -1124,33 +1180,21 @@ end)
 			}
 		})
 	end
+	
 	function Window:MinimizeBtn()
 		if WaitClick then return end
 		WaitClick = true
 		
-		if Minimized then
-			MinimizeButton.Image = "rbxassetid://10734896206"
-			CreateTween({MainFrame, "Size", SaveSize, 0.25, true})
-			ControlSize1.Visible = true
-			ControlSize2.Visible = true
-			for _, item in pairs(ActiveCarnivalItems) do
-				if item.Frame and item.Frame.Parent then
-					item.Frame.Visible = true
-				end
-			end
-			Minimized = false
-		else
-			MinimizeButton.Image = "rbxassetid://10734924532"
-			SaveSize = MainFrame.Size
-			ControlSize1.Visible = false
-			ControlSize2.Visible = false
-			for _, item in pairs(ActiveCarnivalItems) do
-				if item.Frame and item.Frame.Parent then
-					item.Frame.Visible = false
-				end
-			end
-			CreateTween({MainFrame, "Size", UDim2.fromOffset(MainFrame.Size.X.Offset, 28), 0.25, true})
+		-- Lógica nova: Esconde a janela inteira e mostra o Bubble
+		if not Minimized then
+			MainFrame.Visible = false
+			Bubble.Visible = true
 			Minimized = true
+		else
+			-- Caso algo chame essa função enquanto minimizado (incomum, mas preventivo)
+			MainFrame.Visible = true
+			Bubble.Visible = false
+			Minimized = false
 		end
 		
 		WaitClick = false
