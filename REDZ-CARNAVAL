@@ -29,6 +29,7 @@ local redzlib = {
 				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 40))
 			}),
 			["Color Hub 2"] = Color3.fromRGB(45, 45, 45),
+			
 			["Color Stroke"] = Color3.fromRGB(65, 65, 65),
 			["Color Theme"] = Color3.fromRGB(65, 150, 255),
 			["Color Text"] = Color3.fromRGB(245, 245, 245),
@@ -42,33 +43,47 @@ local redzlib = {
 			}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
-			["Color Theme"] = Color3.fromRGB(255, 115, 0),
+			["Color Theme"] = Color3.fromRGB(255, 115, 0),-- 179, 0, 255
 			["Color Text"] = Color3.fromRGB(240, 240, 240),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180),
 			["Color Dark Purple"] = Color3.fromRGB(179, 0, 255),
 			["Color Hub 9"] = Color3.fromRGB(0, 0, 0, 0),
 			["Color Dark Greem"] = Color3.fromRGB(43, 255, 0)
 		},
-		Carnival = {
+		Halloween = {
+            ["Color Hub 1"] = ColorSequence.new({
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(20, 10, 10)),
+                ColorSequenceKeypoint.new(0.50, Color3.fromRGB(40, 15, 50)),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(20, 10, 10))
+            }),
+            ["Color Hub 2"] = Color3.fromRGB(25, 15, 30),
+            ["Color Stroke"] = Color3.fromRGB(60, 20, 80),
+            ["Color Theme"] = Color3.fromRGB(255, 140, 0),
+            ["Color Text"] = Color3.fromRGB(250, 240, 200),
+            ["Color Dark Text"] = Color3.fromRGB(200, 120, 100)
+        },
+        Carnival = {
 			["Color Hub 1"] = ColorSequence.new({
 				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 156, 59)), -- Verde Brasil
 				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 223, 0)), -- Amarelo Brasil
 				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 39, 118)) -- Azul Brasil
 			}),
-			["Color Hub 2"] = Color3.fromRGB(20, 25, 35),
-			["Color Stroke"] = Color3.fromRGB(0, 80, 40),
-			["Color Theme"] = Color3.fromRGB(255, 223, 0),
+			["Color Hub 2"] = Color3.fromRGB(20, 25, 35), -- Fundo azulado escuro
+			["Color Stroke"] = Color3.fromRGB(0, 80, 40), -- Borda esverdeada
+			["Color Theme"] = Color3.fromRGB(255, 223, 0), -- Tema Amarelo Ouro
 			["Color Text"] = Color3.fromRGB(245, 245, 245),
 			["Color Dark Text"] = Color3.fromRGB(200, 200, 200),
-			["Color Dark Purple"] = Color3.fromRGB(0, 50, 150),
-			["Color Dark Greem"] = Color3.fromRGB(0, 200, 80)
+			["Color Dark Purple"] = Color3.fromRGB(0, 50, 150), -- Azul
+			["Color Dark Greem"] = Color3.fromRGB(0, 200, 80) -- Verde
 		}
 	},
-	Info = { Version = "1.2.0" },
+	Info = {
+		Version = "1.2.0"
+	},
 	Save = {
 		UISize = {550, 380},
 		TabSize = 160,
-		Theme = "Carnival"
+		Theme = "Carnival" -- Definido como padrão
 	},
 	Settings = {},
 	Connection = {},
@@ -246,6 +261,20 @@ local Connections, Connection = {}, redzlib.Connection do
 				end
 			end
 			
+				local NotificationContainer = Create("Frame", ScreenGui, {
+				Name = "NotificationContainer",
+				Size = UDim2.new(0, 280, 1, 0),
+				Position = UDim2.new(1, -300, 1, -20),
+				AnchorPoint = Vector2.new(0, 1),
+				BackgroundTransparency = 1,
+				ZIndex = 999
+			}, {
+				Create("UIListLayout", {
+					SortOrder = "LayoutOrder",
+					Padding = UDim.new(0, 8),
+					VerticalAlignment = "Bottom"
+				})
+			})
 			function Connect:Once(func)
 				if type(func) == "function" then
 					local Connected;
@@ -262,6 +291,7 @@ local Connections, Connection = {}, redzlib.Connection do
 		end
 	end
 	
+
 	function Connection:FireConnection(CoName, ...)
 		local Connection = type(CoName) == "string" and Connections[CoName] or Connections[CoName.Name]
 		for _,Func in pairs(Connection) do
@@ -295,6 +325,8 @@ local GetFlag, SetFlag, CheckFlag do
 			db=true;task.wait(0.1);db=false
 			
 			local Success, Encoded = pcall(function()
+				-- local _Flags = {}
+				-- for _,Flag in pairs(Flags) do _Flags[_] = Flag.Value end
 				return HttpService:JSONEncode(Flags)
 			end)
 			
@@ -367,6 +399,7 @@ local function MakeDrag(Instance)
 		local function Update(Input)
 			local delta = Input.Position - DragStart
 			local Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X / UIScale, StartPos.Y.Scale, StartPos.Y.Offset + delta.Y / UIScale)
+			-- Instance.Position = Position
 			CreateTween({Instance, "Position", Position, 0.35})
 		end
 		
@@ -482,7 +515,7 @@ end)
 
 local function ButtonFrame(Instance, Title, Description, HolderSize)
 	local TitleL = InsertTheme(Create("TextLabel", {
-		Font = Enum.Font.FredokaOne, 
+		Font = Enum.Font.FredokaOne, --GothamMedium
 		TextColor3 = Theme["Color Text"],
 		Size = UDim2.new(1, -20),
 		AutomaticSize = "Y",
@@ -576,9 +609,9 @@ local function GetColor(Instance)
 	return ""
 end
 
+-- /////////// --
 function redzlib:GetIcon(index)
-	if not index or type(index) ~= "string" then return "" end
-	if index:find("rbxassetid://") or #index == 0 then
+	if type(index) ~= "string" or index:find("rbxassetid://") or #index == 0 then
 		return index
 	end
 	
@@ -604,7 +637,7 @@ function redzlib:SetTheme(NewTheme)
 	SaveJson("redz library V5.json", redzlib.Save)
 	Theme = redzlib.Themes[NewTheme]
 	
-	Connection:FireConnection("ThemeChanged", NewTheme)
+	Comnection:FireConnection("ThemeChanged", NewTheme)
 	table.foreach(redzlib.Instances, function(_,Val)
 		if Val.Type == "Gradient" then
 			Val.Instance.Color = Theme["Color Hub 1"]
@@ -629,6 +662,21 @@ function redzlib:SetScale(NewScale)
 	UIScale, ScreenGui.Scale.Scale = NewScale, NewScale
 end
 
+local NotificationContainer = Create("Frame", ScreenGui, {
+	Name = "NotificationContainer",
+	Size = UDim2.new(0, 280, 1, 0),
+	Position = UDim2.new(1, -300, 1, -20),
+	AnchorPoint = Vector2.new(0, 1),
+	BackgroundTransparency = 1,
+	ZIndex = 999
+}, {
+	Create("UIListLayout", {
+		SortOrder = "LayoutOrder",
+		Padding = UDim.new(0, 8),
+		VerticalAlignment = "Bottom"
+	})
+})
+
 function redzlib:Notify(Configs)
 	local Title = Configs[1] or Configs.Title or "Notification"
 	local Description = Configs[2] or Configs.Description or Configs.Text or ""
@@ -645,20 +693,7 @@ function redzlib:Notify(Configs)
 	
 	local TypeColor = Colors[Type] or Colors.Info
 	
-	local NotificationFrame = Create("Frame", ScreenGui:FindFirstChild("NotificationContainer") or Create("Frame", ScreenGui, {
-		Name = "NotificationContainer",
-		Size = UDim2.new(0, 280, 1, 0),
-		Position = UDim2.new(1, -300, 1, -20),
-		AnchorPoint = Vector2.new(0, 1),
-		BackgroundTransparency = 1,
-		ZIndex = 999
-	}, {
-		Create("UIListLayout", {
-			SortOrder = "LayoutOrder",
-			Padding = UDim.new(0, 8),
-			VerticalAlignment = "Bottom"
-		})
-	}), {
+	local NotificationFrame = Create("Frame", NotificationContainer, {
 		Size = UDim2.new(1, 0, 0, 45),
 		BackgroundColor3 = Color3.fromRGB(15, 15, 15),
 		BackgroundTransparency = 0,
@@ -731,7 +766,9 @@ function redzlib:Notify(Configs)
 	if Duration > 0 then
 		local timeLeft = Duration
 		local updateInterval = 0.1
-		task.spawn(function()
+		local connection
+		
+		connection = task.spawn(function()
 			while timeLeft > 0 do
 				task.wait(updateInterval)
 				timeLeft = timeLeft - updateInterval
@@ -749,12 +786,16 @@ function redzlib:Notify(Configs)
 			end
 		end)
 	end
+	
+	local Notification = {}
+	function Notification:Remove()
+		RemoveNotification()
+	end
+	
+	return Notification
 end
 
 function redzlib:MakeWindow(Configs)
-	if type(Configs) == "string" then Configs = {Name = Configs} end
-	Configs = Configs or {}
-	
 	local WTitle = Configs[1] or Configs.Name or Configs.Title or "redz Library V5"
 	local WMiniText = Configs[2] or Configs.SubTitle or "by : redz9999"
 	
@@ -765,8 +806,10 @@ function redzlib:MakeWindow(Configs)
 		if type(File) ~= "string" then return end
 		if not readfile or not isfile then return end
 		local s, r = pcall(isfile, File)
+		
 		if s and r then
 			local s, _Flags = pcall(readfile, File)
+			
 			if s and type(_Flags) == "string" then
 				local s,r = pcall(function() return HttpService:JSONDecode(_Flags) end)
 				Flags = s and r or {}
@@ -780,13 +823,18 @@ function redzlib:MakeWindow(Configs)
 		Position = UDim2.new(0.5, -UISizeX/2, 0.5, -UISizeY/2),
 		BackgroundTransparency = 0.15,
 		Name = "Hub"
-	}), "Main")
-	Make("Gradient", MainFrame, { Rotation = 45 })
-	MakeDrag(MainFrame)
+}), "Main")
+	Make("Gradient", MainFrame, {
+		Rotation = 45
+	})MakeDrag(MainFrame)
 	local MainCorner = Make("Corner", MainFrame)
-	local Components = Create("Folder", MainFrame, { Name = "Components" })
+	local Components = Create("Folder", MainFrame, {
+		Name = "Components"
+	})
 	
-	local DropdownHolder = Create("Folder", ScreenGui, { Name = "Dropdown" })
+	local DropdownHolder = Create("Folder", ScreenGui, {
+		Name = "Dropdown"
+	})
 	
 	local TopBar = Create("Frame", Components, {
 		Size = UDim2.new(1, 0, 0, 28),
@@ -803,7 +851,7 @@ function redzlib:MakeWindow(Configs)
 		TextSize = 12,
 		TextColor3 = Theme["Color Text"],
 		BackgroundTransparency = 1,
-		Font = Enum.Font.FredokaOne,
+		Font = Enum.Font.FredokaOne,  --GothamMedium
 		Name = "Title"
 	}, {
 		InsertTheme(Create("TextLabel", {
@@ -1021,7 +1069,6 @@ function redzlib:MakeWindow(Configs)
 	
 	ControlSize1:GetPropertyChangedSignal("Position"):Connect(ControlSize)
 	ControlSize2:GetPropertyChangedSignal("Position"):Connect(ControlSize)
-	ControlSize()
 	
 	ConnectSave(ControlSize1, function()
 		if not Minimized then
@@ -1035,56 +1082,9 @@ function redzlib:MakeWindow(Configs)
 		SaveJson("redz library V5.json", redzlib.Save)
 	end)
 	
-	-- [[ SISTEMA DE BOLINHA FLUTUANTE (BUBBLE) ]] --
-	local SafeBubbleConfig = (type(Configs) == "table" and Configs.Bubble) or {}
-	
-	local Bubble = Create("ImageButton", ScreenGui, {
-		Name = "Bubble",
-		Size = UDim2.fromOffset(50, 50),
-		Position = UDim2.new(0.1, 0, 0.1, 0),
-		BackgroundColor3 = Theme["Color Hub 2"],
-		AutoButtonColor = false,
-		Visible = false,
-		ZIndex = 1005
+	local ButtonsFolder = Create("Folder", TopBar, {
+		Name = "Buttons"
 	})
-	Make("Corner", Bubble, UDim.new(1, 0))
-	Make("Stroke", Bubble, Theme["Color Stroke"])
-	MakeDrag(Bubble)
-	
-	if SafeBubbleConfig.Image then
-		Create("ImageLabel", Bubble, {
-			Size = UDim2.fromScale(0.65, 0.65),
-			Position = UDim2.fromScale(0.5, 0.5),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			BackgroundTransparency = 1,
-			Image = SafeBubbleConfig.Image,
-			ImageColor3 = Theme["Color Text"],
-			ZIndex = 1006
-		})
-	else
-		local Letter = "L"
-		if type(WTitle) == "string" and #WTitle > 0 then
-			Letter = string.sub(WTitle, 1, 1)
-		end
-		
-		InsertTheme(Create("TextLabel", Bubble, {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-			Text = SafeBubbleConfig.Text or Letter,
-			Font = Enum.Font.FredokaOne,
-			TextColor3 = Theme["Color Text"],
-			TextSize = 22,
-			ZIndex = 1006
-		}), "Text")
-	end
-	
-	Bubble.Activated:Connect(function()
-		Bubble.Visible = false
-		MainFrame.Visible = true
-		Minimized = false
-	end)
-	
-	local ButtonsFolder = Create("Folder", TopBar, { Name = "Buttons" })
 	
 	local CloseButton = Create("ImageButton", {
 		Size = UDim2.new(0, 14, 0, 14),
@@ -1102,59 +1102,114 @@ function redzlib:MakeWindow(Configs)
 		Name = "Minimize"
 	})
 	
-	SetChildren(ButtonsFolder, { CloseButton, MinimizeButton })
+	SetChildren(ButtonsFolder, {
+		CloseButton,
+		MinimizeButton
+	})
 	
 	local Minimized, SaveSize, WaitClick
 	local Window, FirstTab = {}, false
-	
 	function Window:CloseBtn()
 		local Dialog = Window:Dialog({
 			Title = "Close",
-			Text = "Deseja realmente fechar o Drip Client?",
+			Text = "Deseja realmente fechar o Drip Client? Ele contém recursos essenciais e fechar agora pode interromper funções importantes, causar falhas ou perder suas configurações. Cuidado antes de prosseguir!",
 			Options = {
-				{"Confirm", function() ScreenGui:Destroy() end},
+				{"Confirm", function()
+					ScreenGui:Destroy()
+				end},
 				{"Cancel"}
 			}
 		})
 	end
-	
 	function Window:MinimizeBtn()
 		if WaitClick then return end
 		WaitClick = true
-		if not Minimized then
-			MainFrame.Visible = false
-			Bubble.Visible = true
-			Minimized = true
-		else
-			MainFrame.Visible = true
-			Bubble.Visible = false
+		
+		if Minimized then
+			MinimizeButton.Image = "rbxassetid://10734896206"
+			CreateTween({MainFrame, "Size", SaveSize, 0.25, true})
+			ControlSize1.Visible = true
+			ControlSize2.Visible = true
+			-- Re-exibir carnaval ao maximizar
+			for _, item in pairs(ActiveCarnivalItems) do
+				if item.Frame and item.Frame.Parent then
+					item.Frame.Visible = true
+				end
+			end
 			Minimized = false
+		else
+			MinimizeButton.Image = "rbxassetid://10734924532"
+			SaveSize = MainFrame.Size
+			ControlSize1.Visible = false
+			ControlSize2.Visible = false
+			-- Esconder carnaval ao minimizar
+			for _, item in pairs(ActiveCarnivalItems) do
+				if item.Frame and item.Frame.Parent then
+					item.Frame.Visible = false
+				end
+			end
+			CreateTween({MainFrame, "Size", UDim2.fromOffset(MainFrame.Size.X.Offset, 28), 0.25, true})
+			Minimized = true
 		end
+		
 		WaitClick = false
 	end
-	
 	function Window:Minimize()
 		MainFrame.Visible = not MainFrame.Visible
 	end
 	
-	function Window:AddMinimizeButton(Configs)
-		local Button = MakeDrag(Create("ImageButton", ScreenGui, {
-			Size = UDim2.fromOffset(60, 60),
-			Position = UDim2.fromScale(0.15, 0.15),
-			BackgroundTransparency = 1,
-			AutoButtonColor = false
-		}))
-		
-		local Stroke, Corner
-		if Configs.Corner then Corner = Make("Corner", Button); SetProps(Corner, Configs.Corner) end
-		if Configs.Stroke then Stroke = Make("Stroke", Button); SetProps(Stroke, Configs.Stroke) end
-		
-		SetProps(Button, Configs.Button)
-		Button.Activated:Connect(Window.Minimize)
-		
-		return { Stroke = Stroke, Corner = Corner, Button = Button }
+	function Window:SetThemeParticles(enabled)
+		if enabled then
+			if not ParticleConnection then
+				ParticleConnection = RunService.Heartbeat:Connect(function()
+					UpdateParticles()
+					SpawnSystem()
+				end)
+			end
+			ParticleContainer.Visible = true
+		else
+			if ParticleConnection then
+				ParticleConnection:Disconnect()
+				ParticleConnection = nil
+			end
+			ParticleContainer.Visible = false
+		end
 	end
-	
+
+
+	function Window:Minimize()
+		MainFrame.Visible = not MainFrame.Visible
+	end
+function Window:AddMinimizeButton(Configs)
+	local Button = MakeDrag(Create("ImageButton", ScreenGui, {
+		Size = UDim2.fromOffset(60, 60),
+		Position = UDim2.fromScale(0.15, 0.15),
+		BackgroundTransparency = 1,
+		AutoButtonColor = false
+	}))
+
+	local Stroke, Corner
+
+	if Configs.Corner then
+		Corner = Make("Corner", Button)
+		SetProps(Corner, Configs.Corner)
+	end
+
+	if Configs.Stroke then
+		Stroke = Make("Stroke", Button)
+		SetProps(Stroke, Configs.Stroke)
+	end
+
+	SetProps(Button, Configs.Button)
+
+	Button.Activated:Connect(Window.Minimize)
+
+	return {
+		Stroke = Stroke,
+		Corner = Corner,
+		Button = Button
+	}
+end
 	function Window:Set(Val1, Val2)
 		if type(Val1) == "string" and type(Val2) == "string" then
 			Title.Text = Val1
@@ -1163,10 +1218,11 @@ function redzlib:MakeWindow(Configs)
 			Title.Text = Val1
 		end
 	end
-	
 	function Window:Dialog(Configs)
 		if MainFrame:FindFirstChild("Dialog") then return end
-		if Minimized then Window:MinimizeBtn() end
+		if Minimized then
+			Window:MinimizeBtn()
+		end
 		
 		local DTitle = Configs[1] or Configs.Title or "Dialog"
 		local DText = Configs[2] or Configs.Text or "This is a Dialog"
@@ -1266,7 +1322,6 @@ function redzlib:MakeWindow(Configs)
 		end)
 		return Dialog
 	end
-	
 	function Window:SelectTab(TabSelect)
 		if type(TabSelect) == "number" then
 			redzlib.Tabs[TabSelect].func:Enable()
@@ -1280,22 +1335,10 @@ function redzlib:MakeWindow(Configs)
 	end
 	
 	local ContainerList = {}
-	function Window:MakeTab(arg1, arg2)
-		local TabConfig = {}
-		if type(arg1) == "table" then
-			TabConfig = arg1
-		elseif type(arg1) == "string" then
-			TabConfig = { Name = arg1 }
-			if type(arg2) == "string" then
-				TabConfig.Icon = arg2
-			elseif type(arg2) == "table" then
-				for k,v in pairs(arg2) do TabConfig[k] = v end
-			end
-		end
-		TabConfig = TabConfig or {}
-
-		local TName = TabConfig[1] or TabConfig.Name or TabConfig.Title or "Tab"
-		local TIcon = TabConfig[2] or TabConfig.Icon or ""
+	function Window:MakeTab(paste, Configs)
+		if type(paste) == "table" then Configs = paste end
+		local TName = Configs[1] or Configs.Name or Configs.Title or "Tab!"
+		local TIcon = Configs[2] or Configs.Icon or ""
 		
 		TIcon = redzlib:GetIcon(TIcon)
 		if not TIcon:find("rbxassetid://") or TIcon:gsub("rbxassetid://", ""):len() < 6 then
@@ -1310,7 +1353,7 @@ function redzlib:MakeWindow(Configs)
 			Size = UDim2.new(1, TIcon and -25 or -15, 1),
 			Position = UDim2.fromOffset(TIcon and 25 or 15),
 			BackgroundTransparency = 1,
-			Font = Enum.Font.BuilderSansBold, 
+			Font = Enum.Font.BuilderSansBold, --GothamMedium
 			Text = TName,
 			TextColor3 = Theme["Color Text"],
 			TextSize = 10,
@@ -1475,6 +1518,7 @@ function redzlib:MakeWindow(Configs)
 			local Callback = Funcs:GetCallback(Configs, 2)
 			
 			local FButton, LabelFunc = ButtonFrame(Container, BName, BDescription, UDim2.new(1, -20))
+--Font 
 			local ButtonIcon = Create("ImageLabel", FButton, {
 				Size = UDim2.new(0, 14, 0, 14),
 				Position = UDim2.new(1, -10, 0.5),
@@ -1821,7 +1865,7 @@ function redzlib:MakeWindow(Configs)
 						Position = UDim2.new(0, 10),
 						Text = Name,
 						TextColor3 = Theme["Color Text"],
-						Font = Enum.Font.FredokaOne, 
+						Font = Enum.Font.FredokaOne, --GothamBold
 						TextXAlignment = "Left",
 						BackgroundTransparency = 1,
 						TextTransparency = 0.4
@@ -2027,8 +2071,11 @@ function redzlib:MakeWindow(Configs)
 			
 			function SetSlider(NewValue)
 				if type(NewValue) ~= "number" then return end
+				
 				local Min, Max = Min * Increase, Max * Increase
+				
 				local SliderPos = (NewValue - Min) / (Max - Min)
+				
 				SetFlag(Flag, NewValue)
 				CreateTween({ SliderIcon, "Position", UDim2.fromScale(math.clamp(SliderPos, 0, 1), 0.5), 0.3, true })
 			end;SetSlider(Default)
@@ -2120,245 +2167,311 @@ function redzlib:MakeWindow(Configs)
 			return TextBox
 		end
 		
-		function Tab:AddLabel(Configs)
-			local LabelText = (type(Configs) == "string" and Configs)
-				or (Configs and (Configs[1] or Configs.Name or Configs.Title))
-				or "Label"
+function Tab:AddLabel(Configs)
+    local LabelText = (type(Configs) == "string" and Configs)
+        or (Configs and (Configs[1] or Configs.Name or Configs.Title))
+        or "Label"
 
-			local Frame = InsertTheme(Create("Frame", Container, {
-				Size = UDim2.new(1, 0, 0, 25),
-				BackgroundColor3 = Theme["Color Hub 2"],
-				BorderColor3 = Theme["Color Stroke"],
-				Name = "Option",
-			}), "Background")
+    -- Fundo do label (igual aos outros elementos)
+    local Frame = InsertTheme(Create("Frame", Container, {
+        Size = UDim2.new(1, 0, 0, 25),
+        BackgroundColor3 = Theme["Color Hub 2"],
+        BorderColor3 = Theme["Color Stroke"],
+        Name = "Option",
+    }), "Background")
 
-			Create("UICorner", Frame, { CornerRadius = UDim.new(0, 4) })
-			Create("UIPadding", Frame, {
-				PaddingLeft = UDim.new(0, 10),
-				PaddingRight = UDim.new(0, 10),
-				PaddingTop = UDim.new(0, 2),
-				PaddingBottom = UDim.new(0, 2),
+    -- Canto arredondado
+    Create("UICorner", Frame, { CornerRadius = UDim.new(0, 4) })
+
+    -- Padding interno
+    Create("UIPadding", Frame, {
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+        PaddingTop = UDim.new(0, 2),
+        PaddingBottom = UDim.new(0, 2),
+    })
+
+    -- Texto do label
+    local TextLabel = InsertTheme(Create("TextLabel", Frame, {
+        Font = Enum.Font.BuilderSansBold,
+        Text = LabelText,
+        TextColor3 = Theme["Color Dark Text"],
+        Size = UDim2.new(1, -10, 1, 0),
+        BackgroundTransparency = 1,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = false,
+        RichText = true,
+    }), "DarkText")
+
+    -- Guarda referência como nas outras opções
+    table.insert(redzlib.Options, {
+        type = "Label",
+        Name = LabelText,
+        func = TextLabel,
+    })
+
+    -- API do objeto retornado
+    local Label = {}
+
+    function Label:Set(text)
+        if text then
+            TextLabel.Text = tostring(text)
+        end
+    end
+
+    function Label:Get()
+        return TextLabel.Text
+    end
+
+    function Label:Visible(bool)
+        if bool == nil then
+            Funcs:ToggleVisible(Frame)
+        else
+            Funcs:ToggleVisible(Frame, bool)
+        end
+    end
+
+    function Label:SetColor(color3)
+        if typeof(color3) == "Color3" then
+            TextLabel.TextColor3 = color3
+        end
+    end
+
+    function Label:Destroy()
+        if Frame and Frame.Parent then
+            Frame:Destroy()
+        end
+    end
+
+    return Label
+end
+
+
+function Tab:AddDiscordInvite(Configs)
+	local Title = Configs[1] or Configs.Name or Configs.Title or "Discord Server"
+	local Description = Configs[2] or Configs.Desc or Configs.Description or ""
+	local Logo = Configs[3] or Configs.Icon or Configs.Logo or ""
+	local Invite = Configs[4] or Configs.Invite or Configs.Link or ""
+	local MembersOnline = Configs.Online or Configs.MembersOnline or 0
+	local TotalMembers = Configs.Members or Configs.TotalMembers or 0
+	local BannerImage = Configs.Banner or Configs.BannerImage or ""
+	
+	local InviteHolder = Create("Frame", Container, {
+		Size = UDim2.new(1, 0, 0, 148),
+		Name = "Option",
+		BackgroundTransparency = 1
+	})
+	
+	local InviteLabel = InsertTheme(Create("TextLabel", InviteHolder, {
+		Size = UDim2.new(1, 0, 0, 15),
+		Position = UDim2.new(0, 5),
+		TextColor3 = Color3.fromRGB(40, 150, 255),
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = "Left",
+		BackgroundTransparency = 1,
+		TextSize = 9,
+		Text = Invite
+	}), "Text")
+	
+	local MainFrame = InsertTheme(Create("Frame", InviteHolder, {
+		Size = UDim2.new(0, 178, 1, -15),
+		Position = UDim2.new(0, 5, 1, 0),
+		AnchorPoint = Vector2.new(0, 1),
+		BackgroundColor3 = Theme["Color Hub 2"],
+		ClipsDescendants = true
+	}), "Frame")
+	Make("Corner", MainFrame, UDim.new(0, 12))
+	Make("Stroke", MainFrame)
+	
+	local BannerArea = Create("ImageLabel", MainFrame, {
+		Size = UDim2.new(1, 0, 0.28, 0),
+		Image = BannerImage,
+		BackgroundColor3 = Color3.fromRGB(88, 101, 242),
+		BackgroundTransparency = BannerImage ~= "" and 1 or 0,
+		ScaleType = Enum.ScaleType.Crop
+	})
+	Make("Corner", BannerArea, UDim.new(0, 12))
+	
+	if BannerImage == "" then
+		local BannerGradient = Create("UIGradient", BannerArea, {
+			Rotation = -15,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(88, 101, 242)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 130, 255))
 			})
+		})
+	end
+	
+	
+	local ServerIcon = Create("ImageLabel", MainFrame, {
+		Size = UDim2.new(0, 33, 0, 33),
+		Position = UDim2.new(0, 10, 0.28, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Image = Logo,
+		BackgroundTransparency = Logo == "" and 1 or 0,
+		BackgroundColor3 = Theme["Color Hub 2"]
+	})
+	Make("Corner", ServerIcon, UDim.new(0, 8))
+	if Logo ~= "" then
+		Make("Stroke", ServerIcon, nil, Theme["Color Hub 2"], 2.2)
+	end
+	
 
-			local TextLabel = InsertTheme(Create("TextLabel", Frame, {
-				Font = Enum.Font.BuilderSansBold,
-				Text = LabelText,
-				TextColor3 = Theme["Color Dark Text"],
-				Size = UDim2.new(1, -10, 1, 0),
-				BackgroundTransparency = 1,
-				TextSize = 12,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = false,
-				RichText = true,
-			}), "DarkText")
-
-			table.insert(redzlib.Options, {
-				type = "Label",
-				Name = LabelText,
-				func = TextLabel,
+	local ServerTitle = InsertTheme(Create("TextLabel", MainFrame, {
+		Size = UDim2.new(1, -20, 0, 10),
+		Position = UDim2.new(0, 10, 0.44, 0),
+		TextXAlignment = "Left",
+		BackgroundTransparency = 1,
+		TextSize = 11,
+		Text = Title,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = Theme["Color Text"]
+	}), "Text")
+	
+	
+	local MembersFrame
+	if MembersOnline > 0 or TotalMembers > 0 then
+		MembersFrame = Create("Frame", MainFrame, {
+			Size = UDim2.new(1, -20, 0, 9),
+			Position = UDim2.new(0, 7, 0.52, 0),
+			BackgroundTransparency = 1
+		}, {
+			Create("UIListLayout", {
+				HorizontalAlignment = "Left",
+				VerticalAlignment = "Center",
+				FillDirection = "Horizontal",
+				Padding = UDim.new(0, 4)
+			}),
+			Create("UIPadding", {
+				PaddingLeft = UDim.new(0, 3),
+				PaddingRight = UDim.new(0, 10)
 			})
-
-			local Label = {}
-			function Label:Set(text) if text then TextLabel.Text = tostring(text) end end
-			function Label:Get() return TextLabel.Text end
-			function Label:Visible(bool) Funcs:ToggleVisible(Frame, bool) end
-			function Label:SetColor(color3) if typeof(color3) == "Color3" then TextLabel.TextColor3 = color3 end end
-			function Label:Destroy() if Frame and Frame.Parent then Frame:Destroy() end end
-
-			return Label
-		end
-
-		function Tab:AddDiscordInvite(Configs)
-			local Title = Configs[1] or Configs.Name or Configs.Title or "Discord Server"
-			local Description = Configs[2] or Configs.Desc or Configs.Description or ""
-			local Logo = Configs[3] or Configs.Icon or Configs.Logo or ""
-			local Invite = Configs[4] or Configs.Invite or Configs.Link or ""
-			local MembersOnline = Configs.Online or Configs.MembersOnline or 0
-			local TotalMembers = Configs.Members or Configs.TotalMembers or 0
-			local BannerImage = Configs.Banner or Configs.BannerImage or ""
-			
-			local InviteHolder = Create("Frame", Container, {
-				Size = UDim2.new(1, 0, 0, 148),
-				Name = "Option",
+		})
+		
+		local function CreateStatusIndicator(color, text)
+			local StatusFrame = Create("Frame", MembersFrame, {
+				Size = UDim2.new(0, 0, 1, 0),
+				AutomaticSize = "X",
 				BackgroundTransparency = 1
 			})
 			
-			local InviteLabel = InsertTheme(Create("TextLabel", InviteHolder, {
-				Size = UDim2.new(1, 0, 0, 15),
-				Position = UDim2.new(0, 5),
-				TextColor3 = Color3.fromRGB(40, 150, 255),
-				Font = Enum.Font.GothamBold,
-				TextXAlignment = "Left",
-				BackgroundTransparency = 1,
-				TextSize = 9,
-				Text = Invite
-			}), "Text")
-			
-			local MainFrame = InsertTheme(Create("Frame", InviteHolder, {
-				Size = UDim2.new(0, 178, 1, -15),
-				Position = UDim2.new(0, 5, 1, 0),
-				AnchorPoint = Vector2.new(0, 1),
-				BackgroundColor3 = Theme["Color Hub 2"],
-				ClipsDescendants = true
-			}), "Frame")
-			Make("Corner", MainFrame, UDim.new(0, 12))
-			Make("Stroke", MainFrame)
-			
-			local BannerArea = Create("ImageLabel", MainFrame, {
-				Size = UDim2.new(1, 0, 0.28, 0),
-				Image = BannerImage,
-				BackgroundColor3 = Color3.fromRGB(88, 101, 242),
-				BackgroundTransparency = BannerImage ~= "" and 1 or 0,
-				ScaleType = Enum.ScaleType.Crop
-			})
-			Make("Corner", BannerArea, UDim.new(0, 12))
-			
-			if BannerImage == "" then
-				local BannerGradient = Create("UIGradient", BannerArea, {
-					Rotation = -15,
-					Color = ColorSequence.new({
-						ColorSequenceKeypoint.new(0, Color3.fromRGB(88, 101, 242)),
-						ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 130, 255))
-					})
-				})
-			end
-			
-			local ServerIcon = Create("ImageLabel", MainFrame, {
-				Size = UDim2.new(0, 33, 0, 33),
-				Position = UDim2.new(0, 10, 0.28, 0),
+			local StatusDot = Create("Frame", StatusFrame, {
+				Size = UDim2.new(0, 3, 0, 3),
+				Position = UDim2.new(0, 5, 0.5, 0),
 				AnchorPoint = Vector2.new(0, 0.5),
-				Image = Logo,
-				BackgroundTransparency = Logo == "" and 1 or 0,
-				BackgroundColor3 = Theme["Color Hub 2"]
+				BackgroundColor3 = color
 			})
-			Make("Corner", ServerIcon, UDim.new(0, 8))
-			if Logo ~= "" then Make("Stroke", ServerIcon, nil, Theme["Color Hub 2"], 2.2) end
+			Make("Corner", StatusDot, UDim.new(1, 0))
 			
-			local ServerTitle = InsertTheme(Create("TextLabel", MainFrame, {
-				Size = UDim2.new(1, -20, 0, 10),
-				Position = UDim2.new(0, 10, 0.44, 0),
-				TextXAlignment = "Left",
+			local StatusText = InsertTheme(Create("TextLabel", StatusFrame, {
+				Size = UDim2.new(0, 0, 1, 0),
+				Position = UDim2.new(0, 12, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				AutomaticSize = "X",
 				BackgroundTransparency = 1,
-				TextSize = 11,
-				Text = Title,
-				Font = Enum.Font.GothamBold,
-				TextColor3 = Theme["Color Text"]
-			}), "Text")
-			
-			local MembersFrame
-			if MembersOnline > 0 or TotalMembers > 0 then
-				MembersFrame = Create("Frame", MainFrame, {
-					Size = UDim2.new(1, -20, 0, 9),
-					Position = UDim2.new(0, 7, 0.52, 0),
-					BackgroundTransparency = 1
-				}, {
-					Create("UIListLayout", {
-						HorizontalAlignment = "Left",
-						VerticalAlignment = "Center",
-						FillDirection = "Horizontal",
-						Padding = UDim.new(0, 4)
-					}),
-					Create("UIPadding", {
-						PaddingLeft = UDim.new(0, 3),
-						PaddingRight = UDim.new(0, 10)
-					})
-				})
-				
-				local function CreateStatusIndicator(color, text)
-					local StatusFrame = Create("Frame", MembersFrame, {
-						Size = UDim2.new(0, 0, 1, 0),
-						AutomaticSize = "X",
-						BackgroundTransparency = 1
-					})
-					local StatusDot = Create("Frame", StatusFrame, {
-						Size = UDim2.new(0, 3, 0, 3),
-						Position = UDim2.new(0, 5, 0.5, 0),
-						AnchorPoint = Vector2.new(0, 0.5),
-						BackgroundColor3 = color
-					})
-					Make("Corner", StatusDot, UDim.new(1, 0))
-					local StatusText = InsertTheme(Create("TextLabel", StatusFrame, {
-						Size = UDim2.new(0, 0, 1, 0),
-						Position = UDim2.new(0, 12, 0.5, 0),
-						AnchorPoint = Vector2.new(0, 0.5),
-						AutomaticSize = "X",
-						BackgroundTransparency = 1,
-						TextSize = 7,
-						Text = text,
-						Font = Enum.Font.Gotham,
-						TextColor3 = Theme["Color Dark Text"]
-					}), "DarkText")
-				end
-				if MembersOnline > 0 then CreateStatusIndicator(Color3.fromRGB(67, 181, 129), MembersOnline .. " Online") end
-				if TotalMembers > 0 then CreateStatusIndicator(Color3.fromRGB(86, 101, 105), TotalMembers .. " Members") end
-			end
-			
-			local DescriptionLabel = InsertTheme(Create("TextLabel", MainFrame, {
-				Size = UDim2.new(1, -60, 0, 8),
-				Position = UDim2.new(0, 10, MembersFrame and 0.6 or 0.56, 0),
-				TextXAlignment = "Left",
-				AutomaticSize = "Y",
-				BackgroundTransparency = 1,
-				TextSize = 8,
-				Text = Description,
-				TextWrapped = true,
+				TextSize = 7,
+				Text = text,
 				Font = Enum.Font.Gotham,
 				TextColor3 = Theme["Color Dark Text"]
 			}), "DarkText")
-			
-			local BottomSection = InsertTheme(Create("Frame", MainFrame, {
-				Size = UDim2.new(1, 0, Description == "" and 0.28 or 0.42, 0),
-				Position = UDim2.new(0, 0, 1, 0),
-				AnchorPoint = Vector2.new(0, 1),
-				BackgroundColor3 = Theme["Color Hub 2"],
-				BorderSizePixel = 0
-			}), "Frame")
-			
-			if Description ~= "" then
-				local BottomGradient = Create("UIGradient", BottomSection, {
-					Rotation = -90,
-					Transparency = NumberSequence.new({
-						NumberSequenceKeypoint.new(0.00, 0.00),
-						NumberSequenceKeypoint.new(0.60, 0.00),
-						NumberSequenceKeypoint.new(1.00, 1.00)
-					})
-				})
-			end
-			
-			local JoinButton = InsertTheme(Create("TextButton", BottomSection, {
-				Position = UDim2.new(0.5, 0, 1, -9),
-				Size = UDim2.new(1, -18, 0, 18),
-				AnchorPoint = Vector2.new(0.5, 1),
-				Text = "Join Server",
-				Font = Enum.Font.GothamBold,
-				TextSize = 10,
-				BackgroundColor3 = Color3.fromRGB(67, 181, 129),
-				TextColor3 = Theme["Color Text"]
-			}), "Text")
-			Make("Corner", JoinButton, UDim.new(0.5, 0))
-			
-			local clickCooldown = 0
-			JoinButton.Activated:Connect(function()
-				if tick() - clickCooldown < 5 then return end
-				clickCooldown = tick()
-				local originalText = JoinButton.Text
-				JoinButton.Text = "Copied to Clipboard!"
-				if setclipboard then setclipboard(Invite) end
-				task.wait(4)
-				if JoinButton and JoinButton.Parent then JoinButton.Text = originalText end
-			end)
-			
-			local DiscordInvite = {}
-			function DiscordInvite:Destroy() InviteHolder:Destroy() end
-			function DiscordInvite:Visible(...) Funcs:ToggleVisible(InviteHolder, ...) end
-			function DiscordInvite:Set(newTitle, newDesc, newInvite)
-				if newTitle then ServerTitle.Text = newTitle end
-				if newDesc then DescriptionLabel.Text = newDesc end
-				if newInvite then InviteLabel.Text = newInvite end
-			end
-			return DiscordInvite
 		end
 		
+		if MembersOnline > 0 then
+			CreateStatusIndicator(Color3.fromRGB(67, 181, 129), MembersOnline .. " Online")
+		end
+		
+		if TotalMembers > 0 then
+			CreateStatusIndicator(Color3.fromRGB(86, 101, 105), TotalMembers .. " Members")
+		end
+	end
+	
+
+	local DescriptionLabel = InsertTheme(Create("TextLabel", MainFrame, {
+		Size = UDim2.new(1, -60, 0, 8),
+		Position = UDim2.new(0, 10, MembersFrame and 0.6 or 0.56, 0),
+		TextXAlignment = "Left",
+		AutomaticSize = "Y",
+		BackgroundTransparency = 1,
+		TextSize = 8,
+		Text = Description,
+		TextWrapped = true,
+		Font = Enum.Font.Gotham,
+		TextColor3 = Theme["Color Dark Text"]
+	}), "DarkText")
+	
+
+	local BottomSection = InsertTheme(Create("Frame", MainFrame, {
+		Size = UDim2.new(1, 0, Description == "" and 0.28 or 0.42, 0),
+		Position = UDim2.new(0, 0, 1, 0),
+		AnchorPoint = Vector2.new(0, 1),
+		BackgroundColor3 = Theme["Color Hub 2"],
+		BorderSizePixel = 0
+	}), "Frame")
+	
+	if Description ~= "" then
+		local BottomGradient = Create("UIGradient", BottomSection, {
+			Rotation = -90,
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0.00, 0.00),
+				NumberSequenceKeypoint.new(0.60, 0.00),
+				NumberSequenceKeypoint.new(1.00, 1.00)
+			})
+		})
+	end
+	
+
+	local JoinButton = InsertTheme(Create("TextButton", BottomSection, {
+		Position = UDim2.new(0.5, 0, 1, -9),
+		Size = UDim2.new(1, -18, 0, 18),
+		AnchorPoint = Vector2.new(0.5, 1),
+		Text = "Join Server",
+		Font = Enum.Font.GothamBold,
+		TextSize = 10,
+		BackgroundColor3 = Color3.fromRGB(67, 181, 129),
+		TextColor3 = Theme["Color Text"]
+	}), "Text")
+	Make("Corner", JoinButton, UDim.new(0.5, 0))
+	
+	local clickCooldown = 0
+	JoinButton.Activated:Connect(function()
+		if tick() - clickCooldown < 5 then return end
+		clickCooldown = tick()
+		
+		local originalText = JoinButton.Text
+		JoinButton.Text = "Copied to Clipboard!"
+		
+		if setclipboard then
+			setclipboard(Invite)
+		end
+		
+		task.wait(4)
+		if JoinButton and JoinButton.Parent then
+			JoinButton.Text = originalText
+		end
+	end)
+	
+	local DiscordInvite = {}
+	function DiscordInvite:Destroy() 
+		InviteHolder:Destroy() 
+	end
+	function DiscordInvite:Visible(...) 
+		Funcs:ToggleVisible(InviteHolder, ...) 
+	end
+	function DiscordInvite:Set(newTitle, newDesc, newInvite)
+		if newTitle then
+			ServerTitle.Text = newTitle
+		end
+		if newDesc then
+			DescriptionLabel.Text = newDesc
+		end
+		if newInvite then
+			InviteLabel.Text = newInvite
+		end
+	end
+	
+	return DiscordInvite
+end
 		return Tab
 	end
 	
@@ -2367,3 +2480,6 @@ function redzlib:MakeWindow(Configs)
 
 	return Window
 end
+
+
+return redzlib
