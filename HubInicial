@@ -1,80 +1,101 @@
-
-local Players = game:GetService("Players")
+-- Serviços
 local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
 
-if CoreGui:FindFirstChild("SeletorDeScripts") then
-    CoreGui.SeletorDeScripts:Destroy()
+-- Configuração de Cores (Tema Amarelo Moderno)
+local Colors = {
+    Background = Color3.fromRGB(20, 20, 20), -- Fundo escuro
+    Accent = Color3.fromRGB(255, 215, 0),    -- Amarelo Ouro
+    Text = Color3.fromRGB(255, 255, 255),    -- Texto Branco
+    TextDark = Color3.fromRGB(30, 30, 30)    -- Texto Escuro (para botões)
+}
+
+-- Remove GUI antiga se existir
+if CoreGui:FindFirstChild("SeletorModerno") then
+    CoreGui.SeletorModerno:Destroy()
 end
 
+-- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SeletorDeScripts"
--- Tenta colocar no CoreGui para segurança, senão vai no PlayerGui
-pcall(function()
-    ScreenGui.Parent = CoreGui
-end)
-if not ScreenGui.Parent then
-    ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-end
+ScreenGui.Name = "SeletorModerno"
+pcall(function() ScreenGui.Parent = CoreGui end)
+if not ScreenGui.Parent then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
+-- Frame Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BackgroundColor3 = Colors.Background
+MainFrame.BackgroundTransparency = 0.3 -- Nível de transparência pedido
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -75) -- Centralizado
-MainFrame.Size = UDim2.new(0, 220, 0, 160)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -100) -- Centralizado
+MainFrame.Size = UDim2.new(0, 220, 0, 210) -- Aumentei altura para caber 3 botões
 MainFrame.Active = true
-MainFrame.Draggable = true -- Permite arrastar o painel
+MainFrame.Draggable = true
 
+-- Arredondar Cantos (MainFrame)
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+-- Borda Amarela (UIStroke)
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Parent = MainFrame
+MainStroke.Color = Colors.Accent
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.2
+
+-- Título
 local Title = Instance.new("TextLabel")
 Title.Parent = MainFrame
-Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 0, 0, 5)
 Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Font = Enum.Font.SourceSansBold
-Title.Text = "Seletor de Scripts"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold -- Fonte mais moderna
+Title.Text = "HUB SELETOR"
+Title.TextColor3 = Colors.Accent
+Title.TextSize = 20
 
+-- Botão Fechar (X)
 local CloseButton = Instance.new("TextButton")
 CloseButton.Parent = MainFrame
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.BackgroundTransparency = 1
+CloseButton.Position = UDim2.new(1, -30, 0, 5)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Font = Enum.Font.GothamBold
 CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextColor3 = Color3.fromRGB(255, 80, 80)
 CloseButton.TextSize = 18
 
 CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
-local Button1 = Instance.new("TextButton")
-Button1.Parent = MainFrame
-Button1.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-Button1.Position = UDim2.new(0.1, 0, 0.3, 0)
-Button1.Size = UDim2.new(0.8, 0, 0.25, 0)
-Button1.Font = Enum.Font.SourceSansBold
-Button1.Text = "100 WAVES LATER"
-Button1.TextColor3 = Color3.fromRGB(255, 255, 255)
-Button1.TextSize = 16
+-- Função para Criar Botões Padronizados
+local function CreateButton(name, position_y, scriptUrl)
+    local Button = Instance.new("TextButton")
+    Button.Parent = MainFrame
+    Button.BackgroundColor3 = Colors.Accent
+    Button.Position = UDim2.new(0.1, 0, 0, position_y)
+    Button.Size = UDim2.new(0.8, 0, 0, 35)
+    Button.Font = Enum.Font.GothamBold
+    Button.Text = name
+    Button.TextColor3 = Colors.TextDark
+    Button.TextSize = 14
+    
+    -- Arredondar Botão
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 8)
+    BtnCorner.Parent = Button
+    
+    Button.MouseButton1Click:Connect(function()
+        loadstring(game:HttpGet(scriptUrl))()
+    end)
+    
+    return Button
+end
 
-Button1.MouseButton1Click:Connect(function()
-    -- Executa o link 1
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100WavesLater"))()
- ScreenGui:Destroy() 
-end)
-
-local Button2 = Instance.new("TextButton")
-Button2.Parent = MainFrame
-Button2.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-Button2.Position = UDim2.new(0.1, 0, 0.65, 0)
-Button2.Size = UDim2.new(0.8, 0, 0.25, 0)
-Button2.Font = Enum.Font.SourceSansBold
-Button2.Text = "Scape Tsunami"
-Button2.TextColor3 = Color3.fromRGB(255, 255, 255)
-Button2.TextSize = 16
-
-Button2.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/ScapeTsunamiForBrainrot"))()
-end)
+-- Criando os 3 Botões
+CreateButton("100 WAVES LATER", 50, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100%20WAVES%20LATER")
+CreateButton("Scape Tsunami", 95, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/ScapeTsunamiForBrainrot")
+CreateButton("Blox Fruits (BF)", 140, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/BFBYfunnyfreak22")
