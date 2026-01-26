@@ -1,6 +1,7 @@
 --- // Redz Library Adaptation for funnyfreak228's Hub \\ ---
 
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/REDZ-CARNAVAL"))()
+-- LINK CORRIGIDO (Removido 'refs/heads/' que impedia o carregamento)
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/CLONEitz/SCRIPTS/main/REDZ-CARNAVAL"))()
 
 -- Criar janela principal
 local Window = redzlib:MakeWindow({
