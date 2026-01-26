@@ -6,7 +6,8 @@ local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/CLONE
 local Window = redzlib:MakeWindow({
     Title = "Clone Hub",
     SubTitle = "Stable 1.0.6 | by clone",
-    SaveFolder = "CloneHub_Redz.json"
+    SaveFolder = "CloneHub_Redz.json",
+    MinimizeKey = Enum.KeyCode.LeftControl -- Adicionado para o botão F funcionar
 })
 
 -- Criar Abas
@@ -1273,22 +1274,23 @@ gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 local button = Instance.new("TextButton")
-button.Size = UDim2.fromOffset(60, 60)
+button.Size = UDim2.fromOffset(50, 50) -- Tamanho ajustado
 button.Position = UDim2.fromOffset(20, 20)
-button.BackgroundTransparency = 0.3
-button.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+button.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Cor mais escura e elegante
+button.BorderColor3 = Color3.fromRGB(255, 0, 0) -- Borda vermelha (tema Redz)
 button.BorderSizePixel = 0
-button.Text = "F"
+button.Text = "C" -- C de Clone Hub
 button.TextColor3 = Color3.new(1, 1, 1)
-button.TextSize = 24
-button.Font = Enum.Font.GothamBold
+button.TextSize = 30
+button.Font = Enum.Font.FredokaOne -- Fonte mais bonita
 button.Parent = gui
 
+-- Deixa o botão perfeitamente redondo
 Instance.new("UICorner", button).CornerRadius = UDim.new(1, 0)
 
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(76, 76, 76)
-stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(255, 255, 255) -- Borda branca fina
+stroke.Thickness = 1.5
 stroke.Parent = button
 
 local scale = Instance.new("UIScale")
