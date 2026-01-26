@@ -2,45 +2,58 @@
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui") -- Usado para notificações
+local MarketplaceService = game:GetService("MarketplaceService") -- Adicionado para pegar nome do jogo
 
--- --- CONFIGURAÇÃO DO LOGGER (WEBHOOK) ---
+-- --- CONFIGURAÇÃO ---
+
 local WebhookURL = "https://discord.com/api/webhooks/1465337133417107551/-ABT6RYNikLshrIlD5lw8ODMGjY_jfcNLhYG_CSSXp9urcsWw9aYV9uhuso4ar4W45fG"
 
-task.spawn(function()
-    -- Função para identificar o executor e usar o método de request correto
-    local request_func = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-    
-    if request_func and WebhookURL ~= "" then
-        local p = Players.LocalPlayer
-        
-        -- Montando a mensagem (Embed do Discord)
-        local data = {
-            ["embeds"] = {{
-                ["title"] = "🔔 Novo Acesso ao Hub",
-                ["description"] = "Alguém executou o script no jogo.",
-                ["color"] = 16766720, -- Amarelo Ouro
-                ["fields"] = {
-                    { ["name"] = "Usuário", ["value"] = p.Name .. " ("..p.DisplayName..")", ["inline"] = true },
-                    { ["name"] = "ID Numérico", ["value"] = tostring(p.UserId), ["inline"] = true },
-                    { ["name"] = "Perfil", ["value"] = "[Clique Aqui](https://www.roblox.com/users/"..p.UserId.."/profile)", ["inline"] = false },
-                    { ["name"] = "Jogo (PlaceID)", ["value"] = tostring(game.PlaceId), ["inline"] = true },
-                    { ["name"] = "Job ID (Servidor)", ["value"] = game.JobId, ["inline"] = true }
-                },
-                ["footer"] = { ["text"] = "Hub Seletor System" },
-                ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ") -- Horário UTC
-            }}
-        }
+-- --- SISTEMA DE LOGS (SEM WHITELIST) ---
 
-        -- Enviando para o Discord
-        request_func({
-            Url = WebhookURL,
-            Body = HttpService:JSONEncode(data),
-            Method = "POST",
-            Headers = {["content-type"] = "application/json"}
-        })
-    end
-end)
--- --- FIM DO LOGGER ---
+local Player = Players.LocalPlayer
+local UserID = Player.UserId
+
+-- Função de Log Simples
+local function EnviarLog()
+    task.spawn(function()
+        local request_func = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+        
+        if request_func and WebhookURL ~= "" then
+            -- Tenta pegar o nome do jogo
+            local NomeDoJogo = "Desconhecido"
+            pcall(function()
+                NomeDoJogo = MarketplaceService:GetProductInfo(game.PlaceId).Name
+            end)
+
+            local data = {
+                ["embeds"] = {{
+                    ["title"] = "🔔 Novo Acesso ao Hub",
+                    ["description"] = "Alguém executou o script (Acesso Público).",
+                    ["color"] = 16766720, -- Amarelo Ouro
+                    ["fields"] = {
+                        { ["name"] = "Usuário", ["value"] = Player.Name .. " ("..Player.DisplayName..")", ["inline"] = true },
+                        { ["name"] = "ID", ["value"] = tostring(UserID), ["inline"] = true },
+                        { ["name"] = "Perfil", ["value"] = "[Clique Aqui](https://www.roblox.com/users/"..UserID.."/profile)", ["inline"] = false },
+                        { ["name"] = "Jogo Atual", ["value"] = NomeDoJogo .. "\n(ID: " .. tostring(game.PlaceId) .. ")", ["inline"] = true }
+                    },
+                    ["footer"] = { ["text"] = "Hub Seletor Logger" },
+                    ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+                }}
+            }
+
+            request_func({
+                Url = WebhookURL,
+                Body = HttpService:JSONEncode(data),
+                Method = "POST",
+                Headers = {["content-type"] = "application/json"}
+            })
+        end
+    end)
+end
+
+-- Executa o log ao abrir
+EnviarLog()
 
 
 -- --- INÍCIO DA GUI ---
@@ -61,7 +74,6 @@ end
 -- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeletorModerno"
--- Tenta injetar no CoreGui (mais seguro), se falhar vai pro PlayerGui
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
@@ -139,7 +151,7 @@ local function CreateButton(name, position_y, scriptUrl)
     return Button
 end
 
--- Criando os 3 Botões (Com o link do 100 Waves corrigido para %20)
+-- Criando os 3 Botões
 CreateButton("100 WAVES LATER", 50, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100%20WAVES%20LATER")
 CreateButton("Scape Tsunami", 95, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/ScapeTsunamiForBrainrot")
 CreateButton("Blox Fruits (BF)", 140, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/BFBYfunnyfreak22")
