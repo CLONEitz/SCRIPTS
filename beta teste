@@ -52,7 +52,13 @@ _G.Settings = {
         ["Chest Farm Mode"] = "Tween",
         ["FruitSniper"] = false
     },
-    Combat = {["Kill Aura"] = false, ["Aura Range"] = 25, ["Aura Target"] = "All"},
+    Combat = {
+        ["Kill Aura"] = false, 
+        ["Aura Range"] = 25, 
+        ["Aura Target"] = "All",
+        ["Aura Delay"] = 0.1, -- Adicionado Cooldown
+        ["Auto Attack"] = false -- Adicionado Auto Attack
+    },
     Setting = {["Tween Speed"] = 300, ["Farm Distance"] = 35, ["Auto Haki"] = true, ["Bring Mob"] = true},
     Stats = {["Enabled"] = false, ["Select Stat"] = "Melee"}
 }
@@ -213,6 +219,24 @@ local function DamageUnit(Target)
         RS.Modules.Net["RE/RegisterAttack"]:FireServer(4)
         RS.Modules.Net["RE/RegisterHit"]:FireServer(Target.HumanoidRootPart, {})
     end)
+end
+
+-- Função Attack Implementada (Omgshit Logic + Mira)
+local function AutoSkillsAttack(Target)
+    if not Target or not Target:FindFirstChild("HumanoidRootPart") then return end
+    
+    -- Mira no inimigo (Camera LookAt)
+    local Camera = workspace.CurrentCamera
+    if Camera then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.HumanoidRootPart.Position)
+    end
+
+    -- Lógica do VirtualUser enviada
+    VirtualUser:CaptureController()
+    VirtualUser:Button1Down(Vector2.new(1280, 672)) -- Coordenadas originais do snippet
+    
+    -- Ativa Ken Haki (Observation) conforme snippet
+    RS.Remotes.CommE:FireServer("Ken", true)
 end
 
 -- Lógica Original das Quests (Hardcoded)
@@ -781,8 +805,12 @@ end
 
 PopulateBossList()
 
+-- Loop Kill Aura Atualizado com Cooldown
 spawn(function()
-    while task.wait(0.1) do
+    while true do
+        local delayTime = _G.Settings.Combat["Aura Delay"] or 0.1
+        task.wait(delayTime)
+        
         if _G.Settings.Combat["Kill Aura"] then
             pcall(function()
                 if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then
@@ -790,9 +818,6 @@ spawn(function()
                 end
                 
                 local Character = LP.Character
-                local Selected = _G.Settings.Main["Select Weapon"]
-                local ToolInHand = Character:FindFirstChildWhichIsA("Tool")
-                
                 local MyPos = Character.HumanoidRootPart.Position
                 local Range = _G.Settings.Combat["Aura Range"] 
                 local TargetMode = _G.Settings.Combat["Aura Target"]
@@ -815,6 +840,35 @@ spawn(function()
                             end
                         end
                     end
+                end
+            end)
+        end
+    end
+end)
+
+-- Loop Auto Attack (Nova Funcionalidade)
+spawn(function()
+    while task.wait(0.1) do
+        if _G.Settings.Combat["Auto Attack"] then
+            pcall(function()
+                if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+                
+                local NearestEnemy = nil
+                local NearestDist = 100 -- Alcance máximo para usar skills
+                
+                -- Busca inimigo mais próximo para mirar
+                for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        local Dist = (v.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                        if Dist < NearestDist then
+                            NearestDist = Dist
+                            NearestEnemy = v
+                        end
+                    end
+                end
+                
+                if NearestEnemy then
+                    AutoSkillsAttack(NearestEnemy)
                 end
             end)
         end
@@ -1447,9 +1501,21 @@ CombatTab:AddSection("Kill Aura Related")
 
 CombatTab:AddToggle({
     Name = "Kill Aura",
-    Default = true,
+    Default = false, -- Alterado para false por padrão para segurança
     Callback = function(Value)
         _G.Settings.Combat["Kill Aura"] = Value
+    end
+})
+
+-- Novo Slider de Cooldown
+CombatTab:AddSlider({
+    Name = "Kill Aura Cooldown",
+    Min = 0.1,
+    Max = 2,
+    Default = 0.1,
+    Increment = 0.1,
+    Callback = function(Value)
+        _G.Settings.Combat["Aura Delay"] = Value
     end
 })
 
@@ -1469,6 +1535,17 @@ CombatTab:AddSlider({
     Default = 25,
     Callback = function(Value)
         _G.Settings.Combat["Aura Range"] = Value
+    end
+})
+
+CombatTab:AddSection("Skills / Auto Attack")
+
+-- Novo Toggle Auto Attack
+CombatTab:AddToggle({
+    Name = "Auto Attack (Aim + Click)",
+    Default = false,
+    Callback = function(Value)
+        _G.Settings.Combat["Auto Attack"] = Value
     end
 })
 
