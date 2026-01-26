@@ -96,6 +96,6 @@ local function CreateButton(name, position_y, scriptUrl)
 end
 
 -- Criando os 3 Botões
-CreateButton("100 WAVES LATER", 50, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100%20WAVES%20LATER")
+CreateButton("100 WAVES LATER", 50, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/100WavesLater")
 CreateButton("Scape Tsunami", 95, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/ScapeTsunamiForBrainrot")
 CreateButton("Blox Fruits (BF)", 140, "https://raw.githubusercontent.com/CLONEitz/SCRIPTS/refs/heads/main/BFBYfunnyfreak22")
