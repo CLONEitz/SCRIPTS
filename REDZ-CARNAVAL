@@ -908,29 +908,25 @@ local ParticleConfig = {
 }
 
 local CarnivalConfig = {
-	MaxItems = 60, -- Mais itens para parecer festa
-	SpawnRate = 0.1, -- Spawna rápido
+	MaxItems = 60,
+	SpawnRate = 0.1,
 	Sizes = {
 		Confetti = {Min = 4, Max = 8},
-		Ribbon = {X = 4, Y = 15}, -- Fitas finas
-		Mask = {Min = 30, Max = 50}
+		Ribbon = {X = 4, Y = 15},
+		Mask = {Min = 25, Max = 40}
 	},
-	Speed = {Min = 15, Max = 35}, -- Caindo devagar
-	RotationSpeed = {Min = -100, Max = 100}, -- Gira bastante
-	SwayAmplitude = 30, -- Balanço para os lados
-	SwayFrequency = 2,
-	MaskIDs = { -- Coloque IDs de mascaras aqui se tiver, pus placeholders
-		"rbxassetid://13361429402", -- Exemplo generico
-		"rbxassetid://0",
+	Speed = {Min = 50, Max = 100}, -- Velocidade de queda
+	RotationSpeed = {Min = -100, Max = 100},
+	SwayAmplitude = 30, -- Força do balanço
+	SwayFrequency = 2, -- Velocidade do balanço
+	MaskIDs = {
+		"rbxassetid://13361429402", -- Exemplo de máscara (substitua se tiver melhores)
 	},
 	Colors = {
-		Color3.fromRGB(255, 0, 0), -- Vermelho
-		Color3.fromRGB(0, 255, 0), -- Verde
-		Color3.fromRGB(0, 0, 255), -- Azul
-		Color3.fromRGB(255, 255, 0), -- Amarelo
-		Color3.fromRGB(255, 0, 255), -- Roxo
-		Color3.fromRGB(0, 255, 255), -- Ciano
-		Color3.fromRGB(255, 165, 0)  -- Laranja
+		Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0), 
+		Color3.fromRGB(0, 0, 255), Color3.fromRGB(255, 255, 0), 
+		Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255),
+		Color3.fromRGB(255, 165, 0)
 	}
 }
 
@@ -1056,19 +1052,18 @@ local function CreateCarnivalItem()
 	local containerSize = ParticleContainer.AbsoluteSize
 	if containerSize.X <= 0 or containerSize.Y <= 0 then return end
 	
-	-- Sorteia tipo: 1-70 (Confete), 71-90 (Fita), 91-100 (Mascara)
 	local roll = math.random(1, 100)
 	local itemType = (roll <= 70 and "Confetti") or (roll <= 90 and "Ribbon") or "Mask"
 	
 	local startX = math.random(10, math.max(11, containerSize.X - 10))
-	local startY = -50 -- Começa acima da tela caindo
+	local startY = -50 -- Começa acima da tela
 	local speed = math.random(CarnivalConfig.Speed.Min, CarnivalConfig.Speed.Max)
 	local rotationSpeed = math.random(CarnivalConfig.RotationSpeed.Min, CarnivalConfig.RotationSpeed.Max)
 	local color = CarnivalConfig.Colors[math.random(1, #CarnivalConfig.Colors)]
 	
 	local ItemFrame
 	
-	if itemType == "Mask" then
+	if itemType == "Mask" and #CarnivalConfig.MaskIDs > 0 then
 		local size = math.random(CarnivalConfig.Sizes.Mask.Min, CarnivalConfig.Sizes.Mask.Max)
 		local maskID = CarnivalConfig.MaskIDs[math.random(1, #CarnivalConfig.MaskIDs)]
 		
@@ -1077,7 +1072,6 @@ local function CreateCarnivalItem()
 			Position = UDim2.fromOffset(startX, startY),
 			BackgroundTransparency = 1,
 			Image = maskID,
-			ImageColor3 = Color3.new(1,1,1), -- Mascaras mantem cor original ou pode pintar
 			ZIndex = -3
 		})
 	elseif itemType == "Ribbon" then
@@ -1105,8 +1099,7 @@ local function CreateCarnivalItem()
 		Speed = speed,
 		RotationSpeed = rotationSpeed,
 		InitialX = startX,
-		SwayOffset = math.random(0, 100), -- Para desincronizar o balanço
-		Type = itemType
+		SwayOffset = math.random(0, 100)
 	}
 	
 	table.insert(ActiveCarnivalItems, ItemData)
@@ -1130,20 +1123,17 @@ local function UpdateCarnivalItems(deltaTime)
 		local item = ActiveCarnivalItems[i]
 		
 		if item.Frame and item.Frame.Parent then
-			local elapsed = currentTime - item.StartTime
 			local currentPos = item.Frame.Position
 			
-			-- Movimento Vertical (Caindo)
+			-- Descendo (Y aumenta)
 			local newY = currentPos.Y.Offset + (item.Speed * deltaTime)
 			
-			-- Movimento Horizontal (Balanço/Sway)
+			-- Balançando (X oscila)
 			local swayX = math.sin((currentTime * CarnivalConfig.SwayFrequency) + item.SwayOffset) * CarnivalConfig.SwayAmplitude
 			local newX = item.InitialX + swayX
 			
-			-- Rotação
 			item.Frame.Rotation = item.Frame.Rotation + (item.RotationSpeed * deltaTime)
 			
-			-- Se passar do fundo da tela
 			if newY > containerHeight + 50 then
 				item.Frame:Destroy()
 				table.remove(ActiveCarnivalItems, i)
@@ -1267,7 +1257,6 @@ end)
 					particle.Frame.Visible = true
 				end
 			end
-			-- Re-exibir carnaval ao maximizar
 			for _, item in pairs(ActiveCarnivalItems) do
 				if item.Frame and item.Frame.Parent then
 					item.Frame.Visible = true
@@ -1284,7 +1273,6 @@ end)
 					particle.Frame.Visible = false
 				end
 			end
-			-- Esconder carnaval ao minimizar
 			for _, item in pairs(ActiveCarnivalItems) do
 				if item.Frame and item.Frame.Parent then
 					item.Frame.Visible = false
